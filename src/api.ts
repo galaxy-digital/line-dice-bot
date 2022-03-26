@@ -32,7 +32,7 @@ const Commands = {
 	help:			"/A",
 	stopBet:		"/B",
 	rolling:		"/S",
-	bankaccount:	"/Y",
+	bankAccount:	"/Y",
 	pastRounds:		"/N",
 
 	methodSingle:	"/"
@@ -244,7 +244,7 @@ const parseCommand = async (userId:string, replyToken:string, cmd:string, param:
 			await updateUser(userId, { bankAccount:param })
 			await replyMessage(replyToken, MSG_REGISTERED_BANK)
 			break
-		case Commands.bankaccount:
+		case Commands.bankAccount:
 			{
 				if (param==='') {
 					await replyMessage(replyToken, ERROR_REQUIRE_BANK)
