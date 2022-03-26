@@ -16,7 +16,7 @@ export const setlog = function(title:string,msg?:any,noWrite?:boolean) {
 		isError = true
 	}
 	if (msg) msg = msg.split(/\r\n|\r|\n/g).map((v:any)=>'\t' + String(v)).join('\r\n')
-	if (!noWrite) fs.appendFileSync(__dirname + '/../logs/' + datetext+'.log', `[${timetext}] ${title}\r\n${msg ? msg + '\r\n' : ''}`)
+	// if (!noWrite) fs.appendFileSync(__dirname + '/../logs/' + datetext+'.log', `[${timetext}] ${title}\r\n${msg ? msg + '\r\n' : ''}`)
 	if (msg && isError) msg = colors.red(msg)
 	console.log(
 		colors.gray('[' + timetext + ']'),
