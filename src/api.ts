@@ -133,34 +133,32 @@ router.post("/webhook-test", (req:express.Request, res:express.Response)=>{
 const getDiceImage = async (text: string) => {
 	if (text.length===3) {
 		const w = 800
-		const h = 800
+		const h = 600
 		const diceSize = 128
 		let left = 120
 		let top = 370
 		let spacing = (w - left * 2 - diceSize * 3) / 2
 		const canvas = createCanvas(w, h)
 		const context = canvas.getContext('2d')
+		
+		context.drawImage(images['background'], 0, 0)
+
 		const nums = text.split('')
 		for (let k=0; k<nums.length; k++) {
-			const x = left + (w + spacing) * k
+			const x = left + (diceSize + spacing) * k
 			const y = top
-			context.drawImage(images['background'], w, 0)
 			context.drawImage(images[nums[k]], x, y)
+		}
+		const title = 'Hi, World!'
+		context.font = 'bold 40pt Menlo'
+		context.textAlign = 'center'
+		context.fillStyle = '#fff'
+		context.fillText(title, w / 2, 110)
 
-			const text = 'Hi, World!'
-			context.font = 'bold 20pt Menlo'
-			context.textAlign = 'center'
-			context.fillStyle = '#fff'
-			context.fillText(text, w / 2, 70)
-
-			const buffer = canvas.toBuffer('image/png')
+		const buffer = canvas.toBuffer('image/png')
 			const filename = +new Date() + '.png'
 			fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
 			return filename
-			/* const dataUri = canvas.toDataURL('image/jpeg')
-			return dataUri */
-		}
-		
 	}
 	return null
 }
