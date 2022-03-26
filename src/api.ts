@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
 import { Message } from '@line/bot-sdk';
-import { Users } from './Model';
+import { Groups, Rounds, Users } from './Model';
 import { createCanvas, Image } from 'canvas'
 
 const middleware = line.middleware;
@@ -13,16 +13,18 @@ const router = express.Router()
 
 const now = () => Math.round(new Date().getTime()/1000)
 
-const adminChatId = "U1525cfda31a82e8d870f227fccfd3a43"
-const channelAccessToken = "5xJ23810ld1WEBnEms7VyEk11ExzYSKHEeBnNQ9w98lb9ou/5tmONGlDmcFAjdRcPt8MmpWFqyCuPoXPXjZU6XQphjNxzhEvxWZkbAPGRYr3OaFm8VyWqV6POrZm3GKeZgp5MxwB6omF9M1euCB48AdB04t89/1O/w1cDnyilFU="
-const channelSecret = "771a403b5f25973d1b2a48b61cdf573a"
-const serverUrl = 'https://8bc6-213-252-244-24.ngrok.io'
+const adminChatId = process.env.ADMIN_CHATID || ''
+const channelAccessToken = process.env.CHANNEL_ACCESSTOKEN || ''
+const channelSecret = process.env.CHANNEL_SECRET || ''
+const serverUrl = process.env.SERVER_URL || ''
+
 const config = { channelAccessToken,  channelSecret, };
 const client = new line.Client({ channelAccessToken });
 const isAdmin = (userId:string) => userId===adminChatId
 
 const AdminCommands = {
 	start: 			"/start",		// 管理命令 - 开始
+	stop: 			"/stop",		// 管理命令 - 开始
 	deposit: 		"/deposit",		// 管理命令 - 充值 
 	statistic: 		"/total",	// 管理命令 - 统计	
 }
@@ -37,6 +39,12 @@ const Commands = {
 
 	methodSingle:	"/"
 }
+
+let currentRound = {
+	roundId:		0,
+	started:		false
+}
+
 const MSG_REGISTERED_BANK = 'Your bank account was successfully registered.'
 const MSG_BALANCE = 'your balance is {balance}.'
 const MSG_GAME_RULE = `1 single type:
@@ -57,6 +65,7 @@ Offer a 2x odds
 2 out of 3 odds
 3 out of 4 odds
 `
+const MSG_NOT_STARTED = 'Betting has not yet started.'
 const MSG_CANCEL_BET = 'your betting cancelled'
 const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
 const MSG_DEPOSIT_SUCCESS = '{user} deposited successfully. '
@@ -111,6 +120,11 @@ export const initApp = async () => {
 		const image = await getImage( _fileDir + '/' + i)
 		if (image) images[i.slice(0, -4)] = image
 		// let uri = 'data:image/webp;base64,' + fs.readFileSync( _fileDir + '/captcha/' + i ).toString("base64");
+	}
+	const row = await Rounds.findOne({ result:{ $exists:false } })
+	if (row!==null) {
+		currentRound.roundId = row.roundId
+		currentRound.started = row.started
 	}
 }
 
@@ -168,11 +182,11 @@ const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessa
 		if (message.type !== "text") return false
 		const replyToken = event.replyToken
 		const [cmd, params] = message.text.split(' ')
-		if (isAdmin(source.userId)) {
+		if (isAdmin(source.userId) && source.groupId===undefined) {
 			const result = await parseAdminCommand(replyToken, cmd, params)
 			if (result===true) return true
 		}
-		return await parseCommand(source.userId, replyToken, cmd, params)
+		return await parseCommand(source.groupId || '', source.userId, replyToken, cmd, params)
 	} catch (error) {
 		console.log(error)
 	}
@@ -184,6 +198,8 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 	try {
 		switch (cmd) {
 		case AdminCommands.start:
+			break
+		case AdminCommands.stop:
 			break
 		case AdminCommands.deposit:
 			{
@@ -220,8 +236,13 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 	return false
 }
 
-const parseCommand = async (userId:string, replyToken:string, cmd:string, param:string):Promise<boolean> => {
+const parseCommand = async (groupId:string, userId:string, replyToken:string, cmd:string, param:string):Promise<boolean> => {
 	try {
+		if (groupId!=='') await insertGroupId(groupId)
+		if (!currentRound.started) {
+			await replyMessage(replyToken, MSG_NOT_STARTED)
+			return false
+		}
 		const user = await getOrCreateUser(userId)
 		switch (cmd) {
 		case Commands.cancel:
@@ -278,6 +299,10 @@ const parseCommand = async (userId:string, replyToken:string, cmd:string, param:
 
 const getUserById = async (id:number) => {
 	return await Users.findOne({ id })
+}
+
+const insertGroupId = async (groupId:string) => {
+	await Groups.updateOne({ groupId }, { $set: { groupId, updated:now() } }, { upsert:true })
 }
 
 const getOrCreateUser = async (userId:string) => {

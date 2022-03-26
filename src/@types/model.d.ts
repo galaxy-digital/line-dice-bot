@@ -11,9 +11,26 @@ declare interface SchemaUsers {
 }
 
 declare interface SchemaRounds {
-	
+	roundId:		number
+	started:		boolean
+	result:			string
+	totalBetting:	number
+	totalRewards:	number
 	updated:		number
 	created:		number
+}
+
+declare interface SchemaBettings {
+	roundId:		number
+	userId:			string
+	betType:		string
+	betAmount:		number
+	created:		number
+}
+
+declare interface SchemaGroups {
+	groupId:		string
+	updated:		number
 }
 
 declare interface ChatSourceType {
