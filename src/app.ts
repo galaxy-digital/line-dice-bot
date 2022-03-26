@@ -4,7 +4,6 @@ import * as http from 'http';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as express from 'express';
-import * as shrinkRay from 'shrink-ray-current'
 import * as cors from 'cors'
 
 
@@ -36,7 +35,6 @@ Model.connect().then(async ()=>{
 			httpsServer = https.createServer(options,app)
 		}
 
-		app.use(shrinkRay())
 		app.use(cors({
 			origin: function(origin, callback){
 				return callback(null, true)
