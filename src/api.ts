@@ -3,7 +3,7 @@ import * as express from 'express'
 import * as fs from 'fs'
 import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
-import { TextMessage, WebhookEvent } from '@line/bot-sdk';
+import { TextMessage } from '@line/bot-sdk';
 import { Users } from './Model';
 import { createCanvas, Image } from 'canvas'
 
