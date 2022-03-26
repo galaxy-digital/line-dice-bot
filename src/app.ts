@@ -46,7 +46,7 @@ Model.connect().then(async ()=>{
 		
 		app.use(express.urlencoded({limit: '200mb'}))
 		app.use(express.json({limit: '200mb'}))
-
+		app.use(express.static(__dirname + '/../images'))
 		app.get('*', (req,res) => {
 			res.status(404).send('')
 		})

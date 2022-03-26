@@ -3,7 +3,7 @@ import * as express from 'express'
 import * as fs from 'fs'
 import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
-import { TextMessage } from '@line/bot-sdk';
+import { Message } from '@line/bot-sdk';
 import { Users } from './Model';
 import { createCanvas, Image } from 'canvas'
 
@@ -16,7 +16,7 @@ const now = () => Math.round(new Date().getTime()/1000)
 const adminChatId = "U1525cfda31a82e8d870f227fccfd3a43"
 const channelAccessToken = "5xJ23810ld1WEBnEms7VyEk11ExzYSKHEeBnNQ9w98lb9ou/5tmONGlDmcFAjdRcPt8MmpWFqyCuPoXPXjZU6XQphjNxzhEvxWZkbAPGRYr3OaFm8VyWqV6POrZm3GKeZgp5MxwB6omF9M1euCB48AdB04t89/1O/w1cDnyilFU="
 const channelSecret = "771a403b5f25973d1b2a48b61cdf573a"
-
+const serverUrl = 'https://8bc6-213-252-244-24.ngrok.io'
 const config = { channelAccessToken,  channelSecret, };
 const client = new line.Client({ channelAccessToken });
 const isAdmin = (userId:string) => userId===adminChatId
@@ -71,7 +71,7 @@ export const replyMessage = (replyToken:string, text:string) => {
 	const message = {
 		type: 'text',
 		text: text
-	} as TextMessage;
+	} as Message;
 	  
 	client.replyMessage(replyToken, message).then((res) => {
 		console.log(res)
@@ -79,7 +79,20 @@ export const replyMessage = (replyToken:string, text:string) => {
 		console.log(err)
 	});
 }
-
+export const replyDieImage = async (replyToken:string, text:string) => {
+	const uri = await getDiceImage(text)
+	const message = {
+		type: 'image',
+		originalContentUrl: serverUrl + '/' + uri,
+		previewImageUrl: serverUrl + '/' + uri
+	} as Message
+	  
+	client.replyMessage(replyToken, message).then((res) => {
+		console.log(res)
+	}).catch((err) => {
+		console.log(err)
+	});
+}
 const getImage = (src:string):Promise<Image|null> => {
 	return new Promise(resolve=>{
 		const buf = fs.readFileSync(src)
@@ -91,13 +104,12 @@ const getImage = (src:string):Promise<Image|null> => {
 }
 
 export const initApp = async () => {
-	setlog("started cron prices")
 	const _fileDir = __dirname + '/../assets'
 	const files = fs.readdirSync( _fileDir)
 	for (let i of files) {
-		if (i.slice(-4)!=='.jpg') continue
+		if (i.slice(-4)!=='.png') continue
 		const image = await getImage( _fileDir + '/' + i)
-		if (image) images[i.slice(-4)] = image
+		if (image) images[i.slice(0, -4)] = image
 		// let uri = 'data:image/webp;base64,' + fs.readFileSync( _fileDir + '/captcha/' + i ).toString("base64");
 	}
 }
@@ -128,11 +140,12 @@ const getDiceImage = async (text: string) => {
 		let spacing = (w - left * 2 - diceSize * 3) / 2
 		const canvas = createCanvas(w, h)
 		const context = canvas.getContext('2d')
-		for (let k=0; k<text.length; k++) {
+		const nums = text.split('')
+		for (let k=0; k<nums.length; k++) {
 			const x = left + (w + spacing) * k
 			const y = top
 			context.drawImage(images['background'], w, 0)
-			context.drawImage(images[k], x, y)
+			context.drawImage(images[nums[k]], x, y)
 
 			const text = 'Hi, World!'
 			context.font = 'bold 20pt Menlo'
@@ -141,10 +154,11 @@ const getDiceImage = async (text: string) => {
 			context.fillText(text, w / 2, 70)
 
 			const buffer = canvas.toBuffer('image/png')
-			fs.writeFileSync('./image.png', buffer)
-			
-			const dataUri = canvas.toDataURL('image/jpeg')
-			return dataUri
+			const filename = +new Date() + '.png'
+			fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
+			return filename
+			/* const dataUri = canvas.toDataURL('image/jpeg')
+			return dataUri */
 		}
 		
 	}
@@ -237,12 +251,12 @@ const parseCommand = async (userId:string, replyToken:string, cmd:string, param:
 
 			break
 		case Commands.rolling:
-			if (param==='') {
+			if (!param || param.length!==3 ) {
 				await replyMessage(replyToken, ERROR_REQUIRE_BANK)
 				return false
 			}
-			await updateUser(userId, { bankAccount:param })
-			await replyMessage(replyToken, MSG_REGISTERED_BANK)
+			// await updateUser(userId, { bankAccount:param })
+			await replyDieImage(replyToken, param)
 			break
 		case Commands.bankAccount:
 			{
