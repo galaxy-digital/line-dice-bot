@@ -61,7 +61,7 @@ const MSG_CANCEL_BET = 'your betting cancelled'
 const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
 const MSG_DEPOSIT_SUCCESS = '{user} deposited successfully. '
 
-const ERROR_REQUIRE_BANK = 'no bank account'
+const ERROR_REQUIRE_BANK = 'Command format: /Y {bank account}'
 const ERROR_INVALID_PARAM = 'invalid parameter'
 const ERROR_NOT_EXISTS_USER = 'not exist user'
 
@@ -246,7 +246,7 @@ const parseCommand = async (userId:string, replyToken:string, cmd:string, param:
 			break
 		case Commands.bankAccount:
 			{
-				if (param==='') {
+				if (!param) {
 					await replyMessage(replyToken, ERROR_REQUIRE_BANK)
 					return false
 				}
