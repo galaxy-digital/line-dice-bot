@@ -22,18 +22,19 @@ const config = { channelAccessToken,  channelSecret, };
 const client = new line.Client({ channelAccessToken });
 const isAdmin = (userId:string) => userId===adminChatId
 
+// 管理命令
 const AdminCommands = {
-	start: 			"/start",		// 管理命令 - 开始
-	stop: 			"/stop",		// 管理命令 - 开始
-	deposit: 		"/deposit",		// 管理命令 - 充值 
-	statistic: 		"/total",	// 管理命令 - 统计	
+	start: 			"/start",		// 开始下注
+	stop: 			"/stop",		// 终了下注
+	deposit: 		"/deposit",		// 用户充值 
+	result:			"/S",			// 
 }
-const Commands = {
+// 管理命令
+const GuestCommands = {
 	cancel:			"/X",
 	balance:		"/C",
 	help:			"/A",
 	stopBet:		"/B",
-	rolling:		"/S",
 	bankAccount:	"/Y",
 	pastRounds:		"/N",
 
@@ -65,11 +66,19 @@ Offer a 2x odds
 2 out of 3 odds
 3 out of 4 odds
 `
+
 const MSG_NOT_STARTED = 'Betting has not yet started.'
+const MSG_NOT_COMPLETED = '当前下注还没终了'
+const MSG_STARTED = '下注开始了'
+const MSG_STOPPED = '下注停止了'
+
+
 const MSG_CANCEL_BET = 'your betting cancelled'
 const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
 const MSG_DEPOSIT_SUCCESS = '{user} deposited successfully. '
 
+const ERROR_UNKNOWN_COMMAND = '无效命令'
+const ERROR_UNKNOWN_ERROR = '无知错误'
 const ERROR_REQUIRE_BANK = 'Command format: /Y {bank account}'
 const ERROR_INVALID_PARAM = 'invalid parameter'
 const ERROR_NOT_EXISTS_USER = 'not exist user'
@@ -123,8 +132,8 @@ export const initApp = async () => {
 	}
 	const row = await Rounds.findOne({ result:{ $exists:false } })
 	if (row!==null) {
-		currentRound.roundId = row.roundId
-		currentRound.started = row.started
+		currentRound.roundId = row.roundId || 1
+		currentRound.started = !!row.started
 	}
 }
 
@@ -198,8 +207,24 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 	try {
 		switch (cmd) {
 		case AdminCommands.start:
+			{
+				if (currentRound.roundId!==0) {
+					await replyMessage(replyToken, MSG_NOT_COMPLETED)
+					return false
+				}
+				await startRound()
+				await replyMessage(replyToken, MSG_STARTED)
+			}
 			break
 		case AdminCommands.stop:
+			{
+				if (currentRound.roundId===0) {
+					await replyMessage(replyToken, MSG_NOT_STARTED)
+					return false
+				}
+				await stopRound()
+				await replyMessage(replyToken, MSG_STOPPED)
+			}
 			break
 		case AdminCommands.deposit:
 			{
@@ -224,7 +249,13 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 				}
 			}
 			break
-		case AdminCommands.statistic:
+		case AdminCommands.result:
+			if (!param || param.length!==3 ) {
+				await replyMessage(replyToken, ERROR_REQUIRE_BANK)
+				return false
+			}
+			await replyDieImage(replyToken, param)
+
 			break
 		default: 
 			return false
@@ -232,6 +263,7 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 		return true
 	} catch (error) {
 		setlog("parseAdminCommand", error)
+		await replyMessage(replyToken, ERROR_UNKNOWN_ERROR)
 	}
 	return false
 }
@@ -245,7 +277,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 		}
 		const user = await getOrCreateUser(userId)
 		switch (cmd) {
-		case Commands.cancel:
+		case GuestCommands.cancel:
 			{
 				if (user.betting) {
 					const balance = user.balance + user.betAmount
@@ -256,28 +288,16 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				}
 			}
 			break
-		case Commands.balance:
+		case GuestCommands.balance:
 			{	
 				await replyMessage(replyToken, MSG_BALANCE.replace('{balance}', String(user.balance)))
 			}
 			break
-		case Commands.help:
-			{
-				await replyMessage(replyToken, MSG_GAME_RULE)
-			}
-			break
-		case Commands.stopBet:
+		case GuestCommands.stopBet:
 
 			break
-		case Commands.rolling:
-			if (!param || param.length!==3 ) {
-				await replyMessage(replyToken, ERROR_REQUIRE_BANK)
-				return false
-			}
-			// await updateUser(userId, { bankAccount:param })
-			await replyDieImage(replyToken, param)
-			break
-		case Commands.bankAccount:
+		
+		case GuestCommands.bankAccount:
 			{
 				if (!param) {
 					await replyMessage(replyToken, ERROR_REQUIRE_BANK)
@@ -287,12 +307,16 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				await replyMessage(replyToken, MSG_REGISTERED_BANK)
 			}
 			break
-		case Commands.pastRounds:
+		case GuestCommands.pastRounds:
+			break
+		default:
+			await replyMessage(replyToken, ERROR_UNKNOWN_COMMAND)
 			break
 		}
 		return true
 	} catch (error) {
 		setlog("parseCommand", error)
+		await replyMessage(replyToken, ERROR_UNKNOWN_ERROR)
 	}
 	return false
 }
@@ -303,6 +327,30 @@ const getUserById = async (id:number) => {
 
 const insertGroupId = async (groupId:string) => {
 	await Groups.updateOne({ groupId }, { $set: { groupId, updated:now() } }, { upsert:true })
+}
+
+const startRound = async () => {
+	let roundId = 1
+	const rows = await Rounds.aggregate([{$group: {_id: null, max: { $max : "$status" }}}]).toArray();
+	if (rows!==null) {
+		roundId = rows[0].max + 1
+	}
+	await Rounds.insertOne({
+		roundId,
+		started: true,
+		result: '',
+		totalBetting: 0,
+		totalRewards: 0,
+		updated: 0,
+		created: 0
+	})
+	currentRound.roundId = roundId
+	currentRound.started = true
+}
+
+const stopRound = async () => {
+	await Rounds.updateOne({ roundId:currentRound.roundId }, { started: false, updated: now() })
+	currentRound.started = false
 }
 
 const getOrCreateUser = async (userId:string) => {
