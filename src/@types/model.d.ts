@@ -1,6 +1,7 @@
 declare interface SchemaUsers {
 	id: 			number
 	userId: 		string
+	displayName: 	string
 	balance:		number
 	bankAccount:	string
 	updated:		number
