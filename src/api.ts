@@ -222,7 +222,7 @@ const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessa
 		if (message.type !== "text") return false
 		const replyToken = event.replyToken
 		const [cmd, params] = message.text.split(' ')
-		if (isAdmin(source.userId) && source.groupId===undefined) {
+		if (isAdmin(source.userId)) {
 			const result = await parseAdminCommand(replyToken, cmd, params)
 			if (result===true) return true
 		}
