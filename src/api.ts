@@ -244,7 +244,7 @@ const validateCommand = (cmd:string):string[]|null => {
 	const result = [] as string[]
 	const len = cmd.length
 	let k = 0
-	while(k<len-1) {
+	while (k < len) {
 		let pk = k
 		for (let i of BetCommandList) {
 			if (cmd.slice(k).indexOf(i)!==-1) {
