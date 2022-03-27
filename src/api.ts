@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
 import { Message } from '@line/bot-sdk';
-import { Groups, Rounds, Users } from './Model';
+import { Bettings, Groups, Rounds, Users } from './Model';
 import { createCanvas, Image } from 'canvas'
 
 const middleware = line.middleware;
@@ -25,7 +25,7 @@ const isAdmin = (userId:string) => userId===adminChatId
 // 管理命令
 const AdminCommands = {
 	start: 			"/start",		// 开始下注
-	stop: 			"/stop",		// 终了下注
+	stop: 			"/B",			// 终了下注
 	deposit: 		"/deposit",		// 用户充值 
 	result:			"/S",			// 
 }
@@ -34,18 +34,28 @@ const GuestCommands = {
 	cancel:			"/X",
 	balance:		"/C",
 	help:			"/A",
-	stopBet:		"/B",
 	bankAccount:	"/Y",
 	pastRounds:		"/N",
-
 	methodSingle:	"/"
 }
+
+// 投注命令 （改时候，别用短号或空白字）
+const BetCommands = {
+	big: "大",
+	small: "小",
+	odd: "单",
+	even: "双",
+}
+const BetCommandList = Object.values(BetCommands).map(i=>i.toLowerCase())
+const BetCommandPattern = new RegExp('[^0-9' + BetCommandList.join('') + ']', 'g')
 
 let currentRound = {
 	roundId:		0,
 	started:		false
 }
-
+const MSG_REPLY_ADMIN = `管理员`
+const MSG_REPLY_GUEST = `客户ID: #{uid}`
+const MSG_BET_TOTAL = `总和: {total}`
 const MSG_REGISTERED_BANK = 'Your bank account was successfully registered.'
 const MSG_BALANCE = 'your balance is {balance}.'
 const MSG_GAME_RULE = `1 single type:
@@ -76,19 +86,23 @@ const MSG_STOPPED = '下注停止了'
 const MSG_CANCEL_BET = '您的投注已取消' // Your bet has been cancelled
 const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
 const MSG_DEPOSIT_SUCCESS = '{user} 存款成功. '
+const MSG_BETTED = '下注成功 【{cmd} {amount}】'
+
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '无知错误'
 const ERROR_REQUIRE_BANK = '命令错误: /Y {银行账户}'
 const ERROR_INVALID_PARAM = '无效参数'
 const ERROR_NOT_EXISTS_USER = '用户不存在'
+const ERROR_NOT_BETTED = "您还没下注"
+const ERROR_BET_BALANCE = "不够余额"
 
 const images = {} as {[key:string]:Image}
 
-export const replyMessage = (replyToken:string, text:string) => {
+export const replyMessage = (uid:number|null, replyToken:string, text:string) => {
 	const message = {
 		type: 'text',
-		text: text
+		text: (uid===null ? '' : (uid===0 ? MSG_REPLY_ADMIN : MSG_REPLY_GUEST.replace('{uid}', String(uid)) + '\r\n')) + text
 	} as Message;
 	  
 	client.replyMessage(replyToken, message).then((res) => {
@@ -97,6 +111,7 @@ export const replyMessage = (replyToken:string, text:string) => {
 		console.log(err)
 	});
 }
+
 export const replyDieImage = async (replyToken:string, text:string) => {
 	const uri = await getDiceImage(text)
 	const message = {
@@ -202,6 +217,29 @@ const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessa
 	return false
 };
 
+const validateCommand = (cmd:string):string[]|null => {
+	const result = [] as string[]
+	const len = cmd.length
+	let k = 0
+	while(k<len-1) {
+		let pk = k
+		for (let i of BetCommandList) {
+			if (cmd.slice(k).indexOf(i)!==-1) {
+				k += i.length
+				result.push(i)
+				if (k===len-1) break
+			}
+		}
+		if (k<len-1) {
+			if (/[1-6]/.test(cmd[k])) {
+				result.push(cmd[k])
+				k++
+			}
+		}
+		if (pk===k) return null
+	}
+	return result
+}
 
 const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Promise<boolean> => {
 	try {
@@ -209,53 +247,62 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 		case AdminCommands.start:
 			{
 				if (currentRound.roundId!==0) {
-					await replyMessage(replyToken, MSG_NOT_COMPLETED)
+					await replyMessage(0, replyToken, MSG_NOT_COMPLETED)
 					return false
 				}
 				await startRound()
-				await replyMessage(replyToken, MSG_STARTED)
+				await replyMessage(0, replyToken, MSG_STARTED)
 			}
 			break
 		case AdminCommands.stop:
 			{
 				if (currentRound.roundId===0) {
-					await replyMessage(replyToken, MSG_NOT_STARTED)
+					await replyMessage(0, replyToken, MSG_NOT_STARTED)
 					return false
 				}
 				await stopRound()
-				await replyMessage(replyToken, MSG_STOPPED)
+				await replyMessage(0, replyToken, MSG_STOPPED)
 			}
 			break
 		case AdminCommands.deposit:
 			{
 				if (param==='') {
-					await replyMessage(replyToken, ERROR_INVALID_PARAM)
+					await replyMessage(0, replyToken, ERROR_INVALID_PARAM)
 					return false
 				}
 				const [ sid, samount ] = param.split(' ')
 				const id = Number(sid)
 				const amount = Number(samount)
 				if (isNaN(id) || isNaN(amount)) {
-					await replyMessage(replyToken, ERROR_INVALID_PARAM)
+					await replyMessage(0, replyToken, ERROR_INVALID_PARAM)
 					return false
 				}
 				const user = await getUserById(id)
 				if (user===null) {
-					await replyMessage(replyToken, ERROR_NOT_EXISTS_USER)
+					await replyMessage(0, replyToken, ERROR_NOT_EXISTS_USER)
 				} else {
 					const balance = user.balance + amount
 					await updateUser(id, { balance, updated:now() })
-					await replyMessage(replyToken, MSG_DEPOSIT_SUCCESS.replace('{user}', String(id)))
+					await replyMessage(0, replyToken, MSG_DEPOSIT_SUCCESS.replace('{user}', String(id)))
 				}
 			}
 			break
 		case AdminCommands.result:
-			if (!param || param.length!==3 ) {
-				await replyMessage(replyToken, ERROR_REQUIRE_BANK)
-				return false
+			{
+				if (!param || param.length!==3 ) {
+					await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
+					return false
+				}
+				await replyDieImage(replyToken, param)
+				const result = await updateRoundAndGetResults(param)
+				let ls = [] as string[]
+				for (let i of result) {
+					const t1 = `#${i.uid}`
+					const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
+					ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
+				}
+				await replyMessage(0, replyToken, ls.join('\r\n'))
 			}
-			await replyDieImage(replyToken, param)
-
 			break
 		default: 
 			return false
@@ -263,7 +310,7 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 		return true
 	} catch (error) {
 		setlog("parseAdminCommand", error)
-		await replyMessage(replyToken, ERROR_UNKNOWN_ERROR)
+		await replyMessage(null, replyToken, ERROR_UNKNOWN_ERROR)
 	}
 	return false
 }
@@ -271,52 +318,104 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 const parseCommand = async (groupId:string, userId:string, replyToken:string, cmd:string, param:string):Promise<boolean> => {
 	try {
 		if (groupId!=='') await insertGroupId(groupId)
+		
+		const user = await getOrCreateUser(userId)
+		const uid = user.id
 		if (!currentRound.started) {
-			await replyMessage(replyToken, MSG_NOT_STARTED)
+			await replyMessage(uid, replyToken, MSG_NOT_STARTED)
 			return false
 		}
-		const user = await getOrCreateUser(userId)
 		switch (cmd) {
 		case GuestCommands.cancel:
 			{
-				if (user.betting) {
-					const balance = user.balance + user.betAmount
-					await updateUser(userId, { betting:false, balance, betTier:'' })
-					await replyMessage(replyToken, MSG_CANCEL_BET)
+				const rows = await Bettings.find({ uid }).toArray()
+				if (rows && rows.length) {
+					let total = 0
+					for (let i of rows) {
+						total += i.amount
+					}
+					await Bettings.deleteMany({ uid })
+					await updateUser(userId, { balance:user.balance + total })
+					await replyMessage(uid, replyToken, MSG_CANCEL_BET)
 				} else {
-					await replyMessage(replyToken, MSG_CANCEL_BET_NOT_STARTED)
+					await replyMessage(uid, replyToken, ERROR_NOT_BETTED)
 				}
 			}
 			break
 		case GuestCommands.balance:
 			{	
-				await replyMessage(replyToken, MSG_BALANCE.replace('{balance}', String(user.balance)))
+				await replyMessage(uid, replyToken, MSG_BALANCE.replace('{balance}', String(user.balance)))
 			}
 			break
-		case GuestCommands.stopBet:
-
-			break
-		
 		case GuestCommands.bankAccount:
 			{
 				if (!param) {
-					await replyMessage(replyToken, ERROR_REQUIRE_BANK)
+					await replyMessage(uid, replyToken, ERROR_REQUIRE_BANK)
 					return false
 				}
 				await updateUser(userId, { bankAccount:param })
-				await replyMessage(replyToken, MSG_REGISTERED_BANK)
+				await replyMessage(uid, replyToken, MSG_REGISTERED_BANK)
 			}
 			break
-		case GuestCommands.pastRounds:
-			break
 		default:
-			await replyMessage(replyToken, ERROR_UNKNOWN_COMMAND)
+			if (!!param) {
+				// 处理多行命令
+				const lines = param.toLowerCase().split(/\r\n|\r|\n/g)
+				const bs = [] as Array<{ bets:string[], amount:number }>
+				let total = 0
+				for (let line of lines) {
+					const x = line.split(BetCommandPattern)
+					if (x.length===2 || x.length===3) {
+						let bets = [] as string[]
+						for (let k=0; k<x.length - 1; k++) {
+							const cs = validateCommand(x[k])
+							if (cs===null) {
+								await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+								return false
+							}
+							for (let i of cs) {
+								bets.push(i)
+							}
+						}
+						if (bets.length) {
+							const amount = Number(x[x.length-1])
+							if (isNaN(amount)) {
+								await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+								return false
+							} else {
+								total += amount
+							}
+							bs.push({ bets, amount })
+						}
+					}
+				}
+				if (bs.length===0) {
+					await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+					return false
+				}
+				if (total>user.balance) {
+					await replyMessage(uid, replyToken, ERROR_BET_BALANCE)
+					return false
+				}
+				let ls = [] as string[]
+				const balance = user.balance - total
+				await updateUser(userId, { balance })
+				const rows = await addAndGetBetting(user.id, bs)
+				for (let i of rows) {
+					total += i.amount
+					ls.push(`${i.cmd} => ${i.amount} `)
+				}
+				ls.push(MSG_BET_TOTAL.replace('{total}', String(total)))
+				await replyMessage(uid, replyToken, ls.join('\r\n'))
+				return true
+			}
+			await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 			break
 		}
 		return true
 	} catch (error) {
 		setlog("parseCommand", error)
-		await replyMessage(replyToken, ERROR_UNKNOWN_ERROR)
+		await replyMessage(null, replyToken, ERROR_UNKNOWN_ERROR)
 	}
 	return false
 }
@@ -330,15 +429,14 @@ const insertGroupId = async (groupId:string) => {
 }
 
 const startRound = async () => {
-	let roundId = 1
-	const rows = await Rounds.aggregate([{$group: {_id: null, max: { $max : "$status" }}}]).toArray();
+	let roundId = 1001
+	const rows = await Rounds.aggregate([{$group: {_id: null, max: { $max : "$roundId" }}}]).toArray();
 	if (rows!==null) {
 		roundId = rows[0].max + 1
 	}
 	await Rounds.insertOne({
 		roundId,
 		started: true,
-		result: '',
 		totalBetting: 0,
 		totalRewards: 0,
 		updated: 0,
@@ -349,15 +447,124 @@ const startRound = async () => {
 }
 
 const stopRound = async () => {
-	await Rounds.updateOne({ roundId:currentRound.roundId }, { started: false, updated: now() })
+	await Rounds.updateOne({ roundId:currentRound.roundId }, { $set:{ started: false, updated: now() } })
 	currentRound.started = false
 }
+
+const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):number => {
+	const rs = result.split('')
+	let valid = true
+	let sum = 0
+	let rate = 0
+	for (let i of rs) sum += Number(i)
+	let isSingle = true
+	for (let i of bets) {
+		if (BetCommands.small===i) {
+			valid &&= sum>=4 && sum<=10
+			isSingle = true
+			if (valid) rate = rate===0 ? 2 : 3.3
+		} else if (BetCommands.big===i) {
+			valid &&= sum>=11 && sum<=17
+			isSingle = true
+			if (valid) rate = rate===0 ? 2 : 3.3
+		} else if (BetCommands.odd===i) {
+			valid &&= (sum % 2 ) == 1
+			isSingle = true
+			if (valid) rate = rate===0 ? 2 : 3.3
+		} else if (BetCommands.even===i) {
+			valid &&= (sum % 2 ) == 0
+			isSingle = true
+			if (valid) rate = rate===0 ? 2 : 3.3
+		} else {
+			let matchedCount = 0
+			for (let r of rs) {
+				if (i===r) matchedCount++
+			}
+			if (isSingle) {
+				rate = 3.3
+			} else {
+				if (rate!==0 && matchedCount>0) {
+					rate = 6
+				} else {
+					if (matchedCount===1) {
+						rate = 2
+					} else if (matchedCount===2) {
+						rate = 3
+					} else if (matchedCount===3) {
+						rate = 4
+					}
+				}
+			}
+		}
+	}
+	return 0
+}
+
+const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, rewards:number, balance:number }>> => {
+	const result = [] as Array<{ uid:number, rewards:number, balance:number }>
+	const roundId = currentRound.roundId
+	currentRound.roundId = 0
+	currentRound.started = false
+	const rows = await Bettings.find({ roundId:currentRound.roundId }).toArray()
+	const us = {} as {[uid:number]:{ bet:number,rewards:number }}
+	let totalBetting = 0
+	let totalRewards = 0
+	if (rows!==null) {
+		for (let i of rows) {
+			const rewards = calculateRewardsOfBetting(num, i.amount, i.bets)
+			us[i.uid] ??= { bet:0,rewards:0 }
+			us[i.uid].bet += i.amount
+			us[i.uid].rewards += rewards
+		}
+		const users = await Users.find({ id:{ $in: Object.keys(us).map(i=>Number(i)) } }).toArray()
+		for (let i of users) {
+			const bet = us[i.id].bet
+			const rewards = us[i.id].rewards
+			const balance = i.balance + rewards
+			if (rewards!==0) await Users.updateOne({ id:i.id }, { $set:{ balance } })
+			result.push({ uid:i.id, rewards:rewards - bet, balance })
+			totalBetting += us[i.id].bet
+			totalRewards += rewards
+		}
+	}
+	await Rounds.updateOne({ roundId }, { $set:{ result:num, totalBetting, totalRewards, updated:now() } })
+	return result
+}
+
+
+const addAndGetBetting = async (uid:number, params:Array<{bets:string[], amount:number}>):Promise<Array<{cmd:string, amount:number}>> => {
+	const inserts = [] as Array<SchemaBettings>
+	const created = now()
+	for (let i of params) {
+		inserts.push({
+			roundId:		currentRound.roundId,
+			uid: 			uid,
+			bets:			i.bets,
+			amount:			i.amount,
+			rewards:		0,
+			created
+		})
+	}
+	await Bettings.insertMany(inserts)
+	const result = [] as Array<{cmd:string, amount:number}>
+	const rows = await Bettings.find({ roundId:currentRound.roundId, uid }).toArray()
+	if (rows) {
+		for (let i of rows) {
+			result.push({ cmd:i.bets.join(''), amount:i.amount })
+		}
+	}
+	return result
+}
+
 
 const getOrCreateUser = async (userId:string) => {
 	let row = await Users.findOne({userId})
 	if (row===null) {
+		let id = 100001
+		const rows = await Users.aggregate([{$group: {_id: null, max: { $max : "$id" }}}]).toArray();
+		if (rows!==null) id = rows[0].max + 1
 		const user = {
-			id:				Math.round(Math.random()*89999998) + 10000001,
+			id,
 			userId,
 			bankAccount:	'',
 			betting: 		false,

@@ -2,9 +2,6 @@ declare interface SchemaUsers {
 	id: 			number
 	userId: 		string
 	balance:		number
-	betting:		boolean
-	betAmount:		number
-	betTier:		string
 	bankAccount:	string
 	updated:		number
 	created:		number
@@ -13,7 +10,7 @@ declare interface SchemaUsers {
 declare interface SchemaRounds {
 	roundId:		number
 	started:		boolean
-	result:			string
+	result?:			string
 	totalBetting:	number
 	totalRewards:	number
 	updated:		number
@@ -22,9 +19,10 @@ declare interface SchemaRounds {
 
 declare interface SchemaBettings {
 	roundId:		number
-	userId:			string
-	betType:		string
-	betAmount:		number
+	uid:			number
+	bets:			string[]
+	amount:			number
+	rewards:		number
 	created:		number
 }
 
