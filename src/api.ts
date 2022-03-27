@@ -51,7 +51,8 @@ const BetCommandPattern = new RegExp('[^0-9' + BetCommandList.join('') + ']', 'g
 
 let currentRound = {
 	roundId:		0,
-	started:		false
+	started:		false,
+	stopped:		false
 }
 const names = {} as {[id:number]:string}
 
@@ -348,6 +349,10 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 			await replyMessage(uid, replyToken, MSG_NOT_STARTED)
 			return false
 		}
+		if (currentRound.stopped) {
+			await replyMessage(uid, replyToken, MSG_STOPPED)
+			return false
+		}
 		switch (cmd) {
 		case GuestCommands.cancel:
 			{
@@ -472,7 +477,7 @@ const startRound = async () => {
 
 const stopRound = async () => {
 	await Rounds.updateOne({ roundId:currentRound.roundId }, { $set:{ started: false, updated: now() } })
-	currentRound.started = false
+	currentRound.stopped = false
 }
 
 const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):number => {
