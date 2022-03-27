@@ -431,7 +431,7 @@ const insertGroupId = async (groupId:string) => {
 const startRound = async () => {
 	let roundId = 1001
 	const rows = await Rounds.aggregate([{$group: {_id: null, max: { $max : "$roundId" }}}]).toArray();
-	if (rows!==null) {
+	if (rows.length>0) {
 		roundId = rows[0].max + 1
 	}
 	await Rounds.insertOne({
@@ -562,7 +562,7 @@ const getOrCreateUser = async (userId:string) => {
 	if (row===null) {
 		let id = 100001
 		const rows = await Users.aggregate([{$group: {_id: null, max: { $max : "$id" }}}]).toArray();
-		if (rows!==null) id = rows[0].max + 1
+		if (rows.length>0) id = rows[0].max + 1
 		const user = {
 			id,
 			userId,
