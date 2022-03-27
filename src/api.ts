@@ -113,8 +113,9 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 				text = MSG_REPLY_GUEST.replace('{uid}', String(uid))
 			}
 		}
-		text += '\r\n'
+		text += '\r\n\r\n'
 	} 
+	text += message
 	const data = { type: 'text', text } as Message;
 	  
 	client.replyMessage(replyToken, data).then((res) => {
