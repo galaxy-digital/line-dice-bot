@@ -87,7 +87,7 @@ const MSG_STOPPED = '下注停止了'
 
 const MSG_CANCEL_BET = '您的投注已取消' // Your bet has been cancelled
 const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
-const MSG_DEPOSIT_SUCCESS = '{user} 存款成功. '
+const MSG_DEPOSIT_SUCCESS = '#{user} 存款 {amount}成功. '
 const MSG_BETTED = '下注成功 【{cmd} {amount}】'
 
 
@@ -306,7 +306,7 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 				} else {
 					const balance = user.balance + amount
 					await updateUser(id, { balance, updated:now() })
-					await replyMessage(0, replyToken, MSG_DEPOSIT_SUCCESS.replace('{user}', String(id)))
+					await replyMessage(0, replyToken, MSG_DEPOSIT_SUCCESS.replace('{user}', `#${String(id)} (${names[id]})`).replace('{amount}', String(amount)))
 				}
 			}
 			break
