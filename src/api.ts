@@ -253,7 +253,7 @@ const validateCommand = (cmd:string):string[]|null => {
 				if (k===len-1) break
 			}
 		}
-		if (k<len-1) {
+		if (k < len) {
 			if (/[1-6]/.test(cmd[k])) {
 				result.push(cmd[k])
 				k++
