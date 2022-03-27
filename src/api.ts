@@ -166,6 +166,7 @@ export const initApp = async () => {
 	if (row!==null) {
 		currentRound.roundId = row.roundId || 1
 		currentRound.started = !!row.started
+		currentRound.stopped = !!row.stopped
 	}
 }
 
@@ -466,6 +467,7 @@ const startRound = async () => {
 	await Rounds.insertOne({
 		roundId,
 		started: true,
+		stopped: false,
 		totalBetting: 0,
 		totalRewards: 0,
 		updated: 0,
@@ -473,6 +475,7 @@ const startRound = async () => {
 	})
 	currentRound.roundId = roundId
 	currentRound.started = true
+	currentRound.stopped = false
 }
 
 const stopRound = async () => {

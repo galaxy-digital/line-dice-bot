@@ -11,7 +11,8 @@ declare interface SchemaUsers {
 declare interface SchemaRounds {
 	roundId:		number
 	started:		boolean
-	result?:			string
+	stopped:		boolean
+	result?:		string
 	totalBetting:	number
 	totalRewards:	number
 	updated:		number
