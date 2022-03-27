@@ -87,7 +87,7 @@ const MSG_STOPPED = '下注停止了'
 
 const MSG_CANCEL_BET = '您的投注已取消' // Your bet has been cancelled
 const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
-const MSG_DEPOSIT_SUCCESS = '#{user} 存款 {amount}成功. '
+const MSG_DEPOSIT_SUCCESS = '{user} 存款 {amount}成功. '
 const MSG_BETTED = '下注成功 【{cmd} {amount}】'
 
 
@@ -381,13 +381,13 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 			}
 			break
 		default:
-			if (!!param) {
+			{
 				// 处理多行命令
-				const lines = param.toLowerCase().split(/\r\n|\r|\n/g)
+				const lines = (cmd + ' ' + param).toLowerCase().split(/\r\n|\r|\n/g)
 				const bs = [] as Array<{ bets:string[], amount:number }>
 				let total = 0
 				for (let line of lines) {
-					const x = line.split(BetCommandPattern)
+					const x = line.trim().split(BetCommandPattern)
 					if (x.length===2 || x.length===3) {
 						let bets = [] as string[]
 						for (let k=0; k<x.length - 1; k++) {
