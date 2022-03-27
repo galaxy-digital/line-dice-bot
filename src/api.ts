@@ -99,6 +99,7 @@ const ERROR_INVALID_PARAM = '无效参数'
 const ERROR_NOT_EXISTS_USER = '用户不存在'
 const ERROR_NOT_BETTED = "您还没下注"
 const ERROR_BET_BALANCE = "不够余额"
+const ERROR_ALREADY_STOPPED = "投注已经停止"
 
 const images = {} as {[key:string]:Image}
 
@@ -281,10 +282,15 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 			break
 		case AdminCommands.stop:
 			{
-				if (currentRound.roundId===0) {
+				if (currentRound.roundId===0 || !currentRound.started) {
 					await replyMessage(0, replyToken, MSG_NOT_STARTED)
 					return false
 				}
+				if (currentRound.stopped) {
+					await replyMessage(0, replyToken, ERROR_ALREADY_STOPPED)
+					return false
+				}
+
 				await stopRound()
 				await replyMessage(0, replyToken, MSG_STOPPED)
 			}
@@ -479,7 +485,7 @@ const startRound = async () => {
 }
 
 const stopRound = async () => {
-	await Rounds.updateOne({ roundId:currentRound.roundId }, { $set:{ started: false, updated: now() } })
+	await Rounds.updateOne({ roundId:currentRound.roundId }, { $set:{ stopped: false, updated: now() } })
 	currentRound.stopped = false
 }
 
