@@ -73,15 +73,15 @@ const MSG_STARTED = '下注开始了'
 const MSG_STOPPED = '下注停止了'
 
 
-const MSG_CANCEL_BET = 'your betting cancelled'
+const MSG_CANCEL_BET = '您的投注已取消' // Your bet has been cancelled
 const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
-const MSG_DEPOSIT_SUCCESS = '{user} deposited successfully. '
+const MSG_DEPOSIT_SUCCESS = '{user} 存款成功. '
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '无知错误'
-const ERROR_REQUIRE_BANK = 'Command format: /Y {bank account}'
-const ERROR_INVALID_PARAM = 'invalid parameter'
-const ERROR_NOT_EXISTS_USER = 'not exist user'
+const ERROR_REQUIRE_BANK = '命令错误: /Y {银行账户}'
+const ERROR_INVALID_PARAM = '无效参数'
+const ERROR_NOT_EXISTS_USER = '用户不存在'
 
 const images = {} as {[key:string]:Image}
 
