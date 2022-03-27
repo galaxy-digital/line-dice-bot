@@ -485,8 +485,8 @@ const startRound = async () => {
 }
 
 const stopRound = async () => {
-	await Rounds.updateOne({ roundId:currentRound.roundId }, { $set:{ stopped: false, updated: now() } })
-	currentRound.stopped = false
+	await Rounds.updateOne({ roundId:currentRound.roundId }, { $set:{ stopped: true, updated: now() } })
+	currentRound.stopped = true
 }
 
 const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):number => {
