@@ -425,7 +425,6 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				await updateUser(userId, { balance })
 				const rows = await addAndGetBetting(user.id, bs)
 				for (let i of rows) {
-					total += i.amount
 					ls.push(`${i.cmd} => ${i.amount} `)
 				}
 				ls.push(MSG_BET_TOTAL.replace('{total}', String(total)))
