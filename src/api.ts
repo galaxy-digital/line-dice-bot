@@ -53,6 +53,8 @@ let currentRound = {
 	roundId:		0,
 	started:		false
 }
+const names = {} as {[id:number]:string}
+
 const MSG_REPLY_ADMIN = `管理员`
 const MSG_REPLY_GUEST = `客户ID: #{uid}`
 const MSG_BET_TOTAL = `总和: {total}`
@@ -99,13 +101,23 @@ const ERROR_BET_BALANCE = "不够余额"
 
 const images = {} as {[key:string]:Image}
 
-export const replyMessage = (uid:number|null, replyToken:string, text:string) => {
-	const message = {
-		type: 'text',
-		text: (uid===null ? '' : (uid===0 ? MSG_REPLY_ADMIN : MSG_REPLY_GUEST.replace('{uid}', String(uid)) + '\r\n')) + text
-	} as Message;
+export const replyMessage = (uid:number|null, replyToken:string, message:string) => {
+	let text = ''
+	if (uid!==null) {
+		if (uid===0) {
+			text = MSG_REPLY_ADMIN
+		} else {
+			if (names[uid]!==undefined) {
+				text = MSG_REPLY_GUEST.replace('{uid}', `${ String(uid) } (${ names[uid] })`)
+			} else {
+				text = MSG_REPLY_GUEST.replace('{uid}', String(uid))
+			}
+		}
+		text += '\r\n'
+	} 
+	const data = { type: 'text', text } as Message;
 	  
-	client.replyMessage(replyToken, message).then((res) => {
+	client.replyMessage(replyToken, data).then((res) => {
 		console.log(res)
 	}).catch((err) => {
 		console.log(err)
@@ -145,6 +157,9 @@ export const initApp = async () => {
 		if (image) images[i.slice(0, -4)] = image
 		// let uri = 'data:image/webp;base64,' + fs.readFileSync( _fileDir + '/captcha/' + i ).toString("base64");
 	}
+	const users = await Users.find().toArray()
+	for (let i of users) names[i.id] = i.displayName
+
 	const row = await Rounds.findOne({ result:{ $exists:false } })
 	if (row!==null) {
 		currentRound.roundId = row.roundId || 1
@@ -563,17 +578,26 @@ const getOrCreateUser = async (userId:string) => {
 		let id = 100001
 		const rows = await Users.aggregate([{$group: {_id: null, max: { $max : "$id" }}}]).toArray();
 		if (rows.length>0) id = rows[0].max + 1
+		const profile = await client.getProfile(userId)
+		console.log('profile', profile)
+		/* .then((profile) => {
+			console.log(profile.displayName);
+			console.log(profile.userId);
+			console.log(profile.pictureUrl);
+			console.log(profile.statusMessage);
+		})
+		.catch((err) => {
+			// error handling
+		}); */
 		const user = {
 			id,
 			userId,
-			bankAccount:	'',
-			betting: 		false,
-			betAmount: 		0,
-			betTier: 		'',
+			displayName:	profile.displayName,
 			balance: 		0,
 			updated: 		0,
 			created: 		now()
 		} as SchemaUsers
+		names[id] = profile.displayName
 		await Users.insertOne(user)
 		return user
 	}
