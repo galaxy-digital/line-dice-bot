@@ -95,6 +95,7 @@ const ERROR_NOT_EXISTS_USER = '用户不存在。'
 const ERROR_NOT_BETTED = "您还没下注。"
 const ERROR_BET_BALANCE = "不够余额。"
 const ERROR_ALREADY_STOPPED = "投注已经停止。"
+const ERROR_GROUP_COMMAND = "It can only be used in groups."
 
 const images = {} as {[key:string]:Image}
 
@@ -116,6 +117,31 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 	const data = { type: 'text', text } as line.Message;
 	  
 	client.replyMessage(replyToken, data).then((res) => {
+		console.log(res)
+	}).catch((err) => {
+		console.log('message', text)
+		console.log(err)
+	});
+}
+
+export const pushMessage = (uid:number|null, chatId:string, message:string) => {
+	let text = ''
+	if (uid!==null) {
+		if (uid===0) {
+			text = MSG_REPLY_ADMIN
+		} else {
+			if (names[uid]!==undefined) {
+				text = MSG_REPLY_GUEST.replace('{uid}', `${ String(uid) } (${ names[uid] })`)
+			} else {
+				text = MSG_REPLY_GUEST.replace('{uid}', String(uid))
+			}
+		}
+		text += '\r\n\r\n'
+	} 
+	text += message
+	const data = { type: 'text', text } as line.Message;
+	  
+	client.pushMessage(chatId, data).then((res) => {
 		console.log(res)
 	}).catch((err) => {
 		console.log('message', text)
@@ -316,25 +342,30 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 			break
 		case AdminCommands.result:
 			{
-				if (currentRound.roundId!==0 && currentRound.started) {
-					if (!param || param.length!==3 ) {
-						await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
-						return false
-					}
-					await replyDieImage(replyToken, param)
-					const result = await updateRoundAndGetResults(param)
-					if (result.length) {
-						let ls = [] as string[]
-						for (let i of result) {
-							const t1 = `#${i.uid}`
-							const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
-							ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
+				if (groupId!=='') {
+					if (currentRound.roundId!==0 && currentRound.started) {
+						if (!param || param.length!==3 ) {
+							await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
+							return false
 						}
-						await replyMessage(0, replyToken, ls.join('\r\n'))
+						await replyDieImage(replyToken, param)
+						const result = await updateRoundAndGetResults(param)
+						if (result.length) {
+							let ls = [] as string[]
+							for (let i of result) {
+								const t1 = `#${i.uid}`
+								const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
+								ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
+							}
+							await pushMessage(0, groupId, ls.join('\r\n'))
+						}
+					} else {
+						await replyMessage(0, replyToken, MSG_NOT_STARTED)
 					}
 				} else {
-					await replyMessage(0, replyToken, MSG_NOT_STARTED)
+					await replyMessage(0, replyToken, ERROR_GROUP_COMMAND)
 				}
+				
 			}
 			break
 		default: 
