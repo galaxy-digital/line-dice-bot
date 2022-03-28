@@ -334,7 +334,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 				if (groupId!=='') {
 					const roundId = currentRound.roundId
 					if (roundId!==0 && currentRound.started) {
-						if (!param || param.length!==3 ) {
+						if ( !/^[1-6]{3,3}$/.test(param) ) {
 							await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
 							return false
 						}
@@ -442,7 +442,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 						for (let k=0; k<x.length - 1; k++) {
 							const cs = validateCommand(x[k])
 							if (cs===null) {
-								await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+								// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 								return false
 							}
 							for (let i of cs) {
@@ -452,7 +452,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 						if (bets.length) {
 							const amount = Number(x[x.length-1])
 							if (isNaN(amount)) {
-								await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+								// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 								return false
 							} else {
 								total += amount
@@ -462,7 +462,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 					}
 				}
 				if (bs.length===0) {
-					await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+					// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 					return false
 				}
 				if (total>user.balance) {
