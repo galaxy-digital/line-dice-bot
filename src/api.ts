@@ -401,7 +401,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 			break
 		default:
 			{
-				const _round = checkRound(uid, replyToken)
+				const _round = await checkRound(uid, replyToken)
 				if (!_round) return false
 
 				// 处理多行命令
