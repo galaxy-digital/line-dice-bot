@@ -275,7 +275,7 @@ const validateCommand = (cmd:string):string[]|null => {
 		}
 		if (pk===k) return null
 	}
-	return result
+	return result.length===0 ? null : result
 }
 
 const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, param:string):Promise<boolean> => {
@@ -462,7 +462,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				}
 				const _round = await checkRound(uid, replyToken)
 				if (!_round) return false
-				
+
 				if (bs.length===0) {
 					// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 					return false
