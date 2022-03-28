@@ -95,6 +95,7 @@ const ERROR_INVALID_PARAM = '无效参数'
 const ERROR_NOT_EXISTS_USER = '用户不存在。'
 const ERROR_NOT_BETTED = "您还没下注。"
 const ERROR_BET_BALANCE = "不够余额。"
+const ERROR_ALREADY_STARTED = "#{roundId} 投注已经开始。"
 const ERROR_ALREADY_STOPPED = "#{roundId} 投注已经停止。"
 const ERROR_GROUP_COMMAND = "It can only be used in groups."
 
@@ -282,7 +283,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 		case AdminCommands.start:
 			{
 				if (currentRound.roundId!==0) {
-					await replyMessage(0, replyToken, MSG_NOT_COMPLETED)
+					await replyMessage(0, replyToken, ERROR_ALREADY_STARTED)
 					return false
 				}
 				await startRound()
