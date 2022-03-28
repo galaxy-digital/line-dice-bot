@@ -235,7 +235,7 @@ const getDiceImage = async (text: string) => {
 }
 
 const getPastResultImage = async (rows:Array<RoundResultType>) => {
-	const diceSize = 128
+	const diceSize = 80
 	let left = 50
 	let top = 50
 	let spacing = 25
@@ -264,7 +264,7 @@ const getPastResultImage = async (rows:Array<RoundResultType>) => {
 		for (let k=0; k<nums.length; k++) {
 			const x = diceLeft + (diceSize + spacing) * k
 			const y = top + (diceSize + spacing) * m
-			context.drawImage(images[nums[k]], x, y)
+			context.drawImage(images[nums[k]], 0, 0, 128, 128, x, y, diceSize, diceSize)
 		}
 	}
 	const buffer = canvas.toBuffer('image/png')
