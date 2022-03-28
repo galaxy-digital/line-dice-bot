@@ -541,29 +541,42 @@ const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):
 	for (let i of bets) {
 		if (BetCommands.small===i) {
 			if (isLeopard) return 0
-			valid &&= sum>=4 && sum<=10
-			isSingle = true
-			if (valid) rate = rate===0 ? 2 : 3.3
+			if (sum>=4 && sum<=10) {
+				isSingle = true
+				rate = rate===0 ? 2 : 3.3
+			} else {
+				return 0
+			}
 		} else if (BetCommands.big===i) {
 			if (isLeopard) return 0
-			valid &&= sum>=11 && sum<=17
-			isSingle = true
-			if (valid) rate = rate===0 ? 2 : 3.3
+			if (sum>=11 && sum<=17) {
+				isSingle = true
+				rate = rate===0 ? 2 : 3.3
+			} else {
+				return 0
+			}
 		} else if (BetCommands.odd===i) {
 			if (isLeopard) return 0
-			valid &&= (sum % 2 ) == 1
-			isSingle = true
-			if (valid) rate = rate===0 ? 2 : 3.3
+			if ((sum % 2 ) == 1 && sum>=5 && sum<=17) {
+				isSingle = true
+				rate = rate===0 ? 2 : 3.3
+			} else {
+				return 0
+			}
 		} else if (BetCommands.even===i) {
 			if (isLeopard) return 0
-			valid &&= (sum % 2 ) == 0
-			isSingle = true
-			if (valid) rate = rate===0 ? 2 : 3.3
+			if ((sum % 2 ) == 0 && sum>=4 && sum<=16) {
+				isSingle = true
+				rate = rate===0 ? 2 : 3.3
+			} else {
+				return 0
+			}
 		} else {
 			let matchedCount = 0
 			for (let r of rs) {
 				if (i===r) matchedCount++
 			}
+			if (matchedCount===0) return 0
 			if (isSingle) {
 				rate = 3.3
 			} else {
