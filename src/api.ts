@@ -161,7 +161,7 @@ export const initApp = async () => {
 
 	const row = await Rounds.findOne({ result:{ $exists:false } })
 	if (row!==null) {
-		currentRound.roundId = row.roundId || 1
+		currentRound.roundId = row.roundId || 1001
 		currentRound.started = !!row.started
 		currentRound.stopped = !!row.stopped
 	}
@@ -316,19 +316,25 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 			break
 		case AdminCommands.result:
 			{
-				if (!param || param.length!==3 ) {
-					await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
-					return false
+				if (currentRound.roundId!==0 && currentRound.started) {
+					if (!param || param.length!==3 ) {
+						await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
+						return false
+					}
+					await replyDieImage(replyToken, param)
+					const result = await updateRoundAndGetResults(param)
+					if (result.length) {
+						let ls = [] as string[]
+						for (let i of result) {
+							const t1 = `#${i.uid}`
+							const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
+							ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
+						}
+						await replyMessage(0, replyToken, ls.join('\r\n'))
+					}
+				} else {
+					await replyMessage(0, replyToken, MSG_NOT_STARTED)
 				}
-				await replyDieImage(replyToken, param)
-				const result = await updateRoundAndGetResults(param)
-				let ls = [] as string[]
-				for (let i of result) {
-					const t1 = `#${i.uid}`
-					const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
-					ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
-				}
-				await replyMessage(0, replyToken, ls.join('\r\n'))
 			}
 			break
 		default: 
