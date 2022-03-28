@@ -86,6 +86,7 @@ const MSG_STOPPED = '下注停止了。'
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
+const MSG_RESULT = '#{roundId}投注结果'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '无知错误'
@@ -124,21 +125,7 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 	});
 }
 
-export const pushMessage = (uid:number|null, chatId:string, message:string) => {
-	let text = ''
-	if (uid!==null) {
-		if (uid===0) {
-			text = MSG_REPLY_ADMIN
-		} else {
-			if (names[uid]!==undefined) {
-				text = MSG_REPLY_GUEST.replace('{uid}', `${ String(uid) } (${ names[uid] })`)
-			} else {
-				text = MSG_REPLY_GUEST.replace('{uid}', String(uid))
-			}
-		}
-		text += '\r\n\r\n'
-	} 
-	text += message
+export const pushMessage = (chatId:string, text:string) => {
 	const data = { type: 'text', text } as line.Message;
 	  
 	client.pushMessage(chatId, data).then((res) => {
@@ -357,7 +344,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 								const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
 								ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
 							}
-							await pushMessage(0, groupId, ls.join('\r\n'))
+							await pushMessage(groupId, MSG_RESULT + '\r\n\r\n' + ls.join('\r\n'))
 						}
 					} else {
 						await replyMessage(0, replyToken, MSG_NOT_STARTED)
