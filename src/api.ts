@@ -152,6 +152,7 @@ export const replyDieImage = async (replyToken:string, text:string) => {
 		console.log(err)
 	});
 }
+
 const getImage = (src:string):Promise<Image|null> => {
 	return new Promise(resolve=>{
 		const buf = fs.readFileSync(src)
@@ -331,7 +332,8 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 		case AdminCommands.result:
 			{
 				if (groupId!=='') {
-					if (currentRound.roundId!==0 && currentRound.started) {
+					const roundId = currentRound.roundId
+					if (roundId!==0 && currentRound.started) {
 						if (!param || param.length!==3 ) {
 							await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
 							return false
@@ -345,7 +347,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 								const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
 								ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
 							}
-							await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(currentRound.roundId)) + '\r\n\r\n' + ls.join('\r\n'))
+							await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
 						}
 					} else {
 						await replyMessage(0, replyToken, MSG_NOT_STARTED)
