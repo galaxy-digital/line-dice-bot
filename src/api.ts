@@ -21,6 +21,11 @@ const config = { channelAccessToken,  channelSecret, };
 const client = new line.Client({ channelAccessToken });
 const isAdmin = (userId:string) => userId===adminChatId
 
+interface RoundResultType {
+	roundId:	number
+	result:		string
+}
+
 // 管理命令
 const AdminCommands = {
 	start: 			"/start",		// 开始下注
@@ -98,7 +103,7 @@ const ERROR_BET_BALANCE = "不够余额。"
 const ERROR_ALREADY_STARTED = "🚩{roundId}投注已经开始。"
 const ERROR_ALREADY_STOPPED = "🚩{roundId}投注已经停止。"
 const ERROR_GROUP_COMMAND = "It can only be used in groups."
-
+const ERROR_NO_RESULT = "no past result"
 const images = {} as {[key:string]:Image}
 
 export const replyMessage = (uid:number|null, replyToken:string, message:string) => {
@@ -137,8 +142,7 @@ export const pushMessage = (chatId:string, text:string) => {
 	});
 }
 
-export const replyDieImage = async (replyToken:string, text:string) => {
-	const uri = await getDiceImage(text)
+export const replyImage = async (replyToken:string, uri:string) => {
 	const message = {
 		type: 'image',
 		originalContentUrl: serverUrl + '/' + uri,
@@ -148,7 +152,6 @@ export const replyDieImage = async (replyToken:string, text:string) => {
 	client.replyMessage(replyToken, message).then((res) => {
 		console.log(res)
 	}).catch((err) => {
-		console.log('message', text)
 		console.log(err)
 	});
 }
@@ -229,6 +232,45 @@ const getDiceImage = async (text: string) => {
 			return filename
 	}
 	return null
+}
+
+const getPastResultImage = async (rows:Array<RoundResultType>) => {
+	const diceSize = 128
+	let left = 50
+	let top = 50
+	let spacing = 25
+	
+	const w = 800
+	const h = top * 2 + (diceSize + spacing) * (rows.length - 1)
+
+	const diceLeft = w - left - diceSize * 3 - spacing * 2
+	const canvas = createCanvas(w, h)
+	const context = canvas.getContext('2d')
+	
+	// context.drawImage(images['background'], 0, 0)
+	// draw header 
+	
+	for (let m = 0; m<rows.length; m++) {
+		const i = rows[m]
+
+		const title = `Round ${i.roundId}`
+		context.font = 'bold 40pt Menlo'
+		context.textAlign = 'left'
+		// context.fillStyle = '#fff'
+		
+		context.fillText(title, left, top + (diceSize + spacing) * m + (diceSize + 40) / 2 )
+
+		const nums = i.result.split('')
+		for (let k=0; k<nums.length; k++) {
+			const x = diceLeft + (diceSize + spacing) * k
+			const y = top + (diceSize + spacing) * m
+			context.drawImage(images[nums[k]], x, y)
+		}
+	}
+	const buffer = canvas.toBuffer('image/png')
+	const filename = +new Date() + '.png'
+	fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
+	return filename
 }
 
 const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessageType):Promise<boolean> => {
@@ -338,16 +380,21 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 							await replyMessage(0, replyToken, ERROR_UNKNOWN_COMMAND)
 							return false
 						}
-						await replyDieImage(replyToken, param)
-						const result = await updateRoundAndGetResults(param)
-						if (result.length) {
-							let ls = [] as string[]
-							for (let i of result) {
-								const t1 = `#${i.uid}`
-								const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
-								ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
+						const uri = await getDiceImage(param)
+						if (uri) {
+							await replyImage(replyToken, uri)
+							const result = await updateRoundAndGetResults(param)
+							if (result.length) {
+								let ls = [] as string[]
+								for (let i of result) {
+									const t1 = `#${i.uid}`
+									const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
+									ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
+								}
+								await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
 							}
-							await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
+						} else {
+							await replyMessage(0, replyToken, ERROR_UNKNOWN_ERROR)
 						}
 					} else {
 						await replyMessage(0, replyToken, MSG_NOT_STARTED)
@@ -355,7 +402,6 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 				} else {
 					await replyMessage(0, replyToken, ERROR_GROUP_COMMAND)
 				}
-				
 			}
 			break
 		default: 
@@ -426,10 +472,23 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				await replyMessage(uid, replyToken, MSG_REGISTERED_BANK)
 			}
 			break
+		case GuestCommands.pastRounds:
+			{
+				const rows = await getPastResults()
+				if (rows.length) {
+					const uri = await getPastResultImage(rows)
+					if (uri) {
+						await replyImage(replyToken, uri)
+					} else {
+						await replyMessage(0, replyToken, ERROR_UNKNOWN_ERROR)
+					}
+				} else {
+					await replyMessage(0, replyToken, ERROR_NO_RESULT)
+				}
+			}
+			break
 		default:
 			{
-				
-
 				// 处理多行命令
 				const lines = (cmd + ' ' + param).toLowerCase().split(/\r\n|\r|\n/g)
 				const bs = [] as Array<{ bets:string[], amount:number }>
@@ -530,14 +589,11 @@ const stopRound = async () => {
 
 const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):number => {
 	const rs = result.split('')
-	let valid = true
 	let sum = 0
 	let rate = 0
 	for (let i of rs) sum += Number(i)
 	let isLeopard = rs[0]===rs[1] && rs[1]===rs[2]
 	let isSingle = false
-	
-	
 	for (let i of bets) {
 		if (BetCommands.small===i) {
 			if (isLeopard) return 0
@@ -625,6 +681,16 @@ const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, 
 	currentRound.roundId = 0
 	currentRound.started = false
 	await Rounds.updateOne({ roundId }, { $set:{ result:num, totalBetting, totalRewards, updated:now() } })
+	return result
+}
+
+const getPastResults = async ():Promise<Array<RoundResultType>> => {
+	const result = [] as Array<RoundResultType>
+	const rows = await Rounds.find({ result:{ $exists:true } }).sort({ created:-1 }).limit(10).toArray()
+	for (let k=rows.length - 1; k>=0; k--) {
+		const i = rows[k]
+		result.push({ roundId:i.roundId, result:i.result || '' })
+	}
 	return result
 }
 
