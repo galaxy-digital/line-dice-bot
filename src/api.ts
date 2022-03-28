@@ -85,7 +85,7 @@ const MSG_STARTED = '下注开始了。'
 const MSG_STOPPED = '下注停止了。'
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
-const MSG_DEPOSIT_SUCCESS = '{user} 存款 {amount}成功。'
+const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '无知错误'
@@ -118,6 +118,7 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 	client.replyMessage(replyToken, data).then((res) => {
 		console.log(res)
 	}).catch((err) => {
+		console.log('message', text)
 		console.log(err)
 	});
 }
@@ -133,6 +134,7 @@ export const replyDieImage = async (replyToken:string, text:string) => {
 	client.replyMessage(replyToken, message).then((res) => {
 		console.log(res)
 	}).catch((err) => {
+		console.log('message', text)
 		console.log(err)
 	});
 }
@@ -308,7 +310,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 				} else {
 					const balance = user.balance + amount
 					await updateUser(id, { balance, updated:now() })
-					await replyMessage(id, replyToken, MSG_DEPOSIT_SUCCESS.replace('{user}', `#${String(id)} (${names[id]})`).replace('{amount}', String(amount)))
+					await replyMessage(id, replyToken, MSG_DEPOSIT_SUCCESS.replace('{amount}', String(amount)))
 				}
 			}
 			break
