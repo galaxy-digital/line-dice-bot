@@ -56,7 +56,7 @@ let currentRound = {
 const names = {} as {[id:number]:string}
 
 const MSG_REPLY_ADMIN = `管理员`
-const MSG_REPLY_GUEST = `用户ID: #{uid}`
+const MSG_REPLY_GUEST = `用户ID: 🙂{uid}`
 const MSG_BET_TOTAL = `总和: {total}`
 const MSG_REGISTERED_BANK = 'Your bank account was successfully registered.'
 const MSG_BALANCE = 'your balance is {balance}.'
@@ -81,12 +81,12 @@ Offer a 2x odds
 
 const MSG_NOT_STARTED = '投注还没开始。'
 const MSG_NOT_COMPLETED = '当前下注还没终了。'
-const MSG_STARTED = '#{roundId}投注 下注开始了。'
-const MSG_STOPPED = '#{roundId}投注 下注停止了。'
+const MSG_STARTED = '🚩{roundId}投注开始了。'
+const MSG_STOPPED = '🚩{roundId}投注停止了。'
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
-const MSG_RESULT = '#{roundId}投注结果'
+const MSG_RESULT = '🚩{roundId}投注结果'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '无知错误'
@@ -95,8 +95,8 @@ const ERROR_INVALID_PARAM = '无效参数'
 const ERROR_NOT_EXISTS_USER = '用户不存在。'
 const ERROR_NOT_BETTED = "您还没下注。"
 const ERROR_BET_BALANCE = "不够余额。"
-const ERROR_ALREADY_STARTED = "#{roundId} 投注已经开始。"
-const ERROR_ALREADY_STOPPED = "#{roundId} 投注已经停止。"
+const ERROR_ALREADY_STARTED = "🚩{roundId}投注已经开始。"
+const ERROR_ALREADY_STOPPED = "🚩{roundId}投注已经停止。"
 const ERROR_GROUP_COMMAND = "It can only be used in groups."
 
 const images = {} as {[key:string]:Image}
