@@ -340,22 +340,29 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 	return false
 }
 
+const checkRound = async (uid:number, replyToken:string) => {
+	if (!currentRound.started) {
+		await replyMessage(uid, replyToken, MSG_NOT_STARTED)
+		return false
+	}
+	if (currentRound.stopped) {
+		await replyMessage(uid, replyToken, MSG_STOPPED)
+		return false
+	}
+	return true
+}
+
 const parseCommand = async (groupId:string, userId:string, replyToken:string, cmd:string, param:string):Promise<boolean> => {
 	try {
 		// if (groupId!=='') await insertGroupId(groupId)
 		const user = await getOrCreateUser(userId)
 		const uid = user.id
-		if (!currentRound.started) {
-			await replyMessage(uid, replyToken, MSG_NOT_STARTED)
-			return false
-		}
-		if (currentRound.stopped) {
-			await replyMessage(uid, replyToken, MSG_STOPPED)
-			return false
-		}
+		
 		switch (cmd) {
 		case GuestCommands.cancel:
 			{
+				const _round = checkRound(uid, replyToken)
+				if (!_round) return false
 				const rows = await Bettings.find({ uid }).toArray()
 				if (rows && rows.length) {
 					let total = 0
@@ -392,6 +399,9 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 			break
 		default:
 			{
+				const _round = checkRound(uid, replyToken)
+				if (!_round) return false
+				
 				// 处理多行命令
 				const lines = (cmd + ' ' + param).toLowerCase().split(/\r\n|\r|\n/g)
 				const bs = [] as Array<{ bets:string[], amount:number }>
