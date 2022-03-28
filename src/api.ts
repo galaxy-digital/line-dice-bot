@@ -81,8 +81,8 @@ Offer a 2x odds
 
 const MSG_NOT_STARTED = '投注还没开始。'
 const MSG_NOT_COMPLETED = '当前下注还没终了。'
-const MSG_STARTED = '下注开始了。'
-const MSG_STOPPED = '下注停止了。'
+const MSG_STARTED = '#{roundId}投注 下注开始了。'
+const MSG_STOPPED = '#{roundId}投注 下注停止了。'
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
@@ -95,7 +95,7 @@ const ERROR_INVALID_PARAM = '无效参数'
 const ERROR_NOT_EXISTS_USER = '用户不存在。'
 const ERROR_NOT_BETTED = "您还没下注。"
 const ERROR_BET_BALANCE = "不够余额。"
-const ERROR_ALREADY_STOPPED = "投注已经停止。"
+const ERROR_ALREADY_STOPPED = "#{roundId} 投注已经停止。"
 const ERROR_GROUP_COMMAND = "It can only be used in groups."
 
 const images = {} as {[key:string]:Image}
@@ -286,7 +286,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 					return false
 				}
 				await startRound()
-				await replyMessage(0, replyToken, MSG_STARTED)
+				await replyMessage(0, replyToken, MSG_STARTED.replace('{roundId}', String(currentRound.roundId)))
 			}
 			break
 		case AdminCommands.stop:
@@ -296,12 +296,12 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 					return false
 				}
 				if (currentRound.stopped) {
-					await replyMessage(0, replyToken, ERROR_ALREADY_STOPPED)
+					await replyMessage(0, replyToken, ERROR_ALREADY_STOPPED.replace('{roundId}', String(currentRound.roundId)))
 					return false
 				}
 
 				await stopRound()
-				await replyMessage(0, replyToken, MSG_STOPPED)
+				await replyMessage(0, replyToken, MSG_STOPPED.replace('{roundId}', String(currentRound.roundId)))
 			}
 			break
 		case AdminCommands.deposit:
@@ -344,7 +344,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 								const t2 = `${ (i.rewards>0 ? '+' : '') + i.rewards } = ${ i.balance }`
 								ls.push([ t1, ' '.repeat(30 - t1.length - t2.length), t2 ].join(''))
 							}
-							await pushMessage(groupId, MSG_RESULT + '\r\n\r\n' + ls.join('\r\n'))
+							await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(currentRound.roundId)) + '\r\n\r\n' + ls.join('\r\n'))
 						}
 					} else {
 						await replyMessage(0, replyToken, MSG_NOT_STARTED)
