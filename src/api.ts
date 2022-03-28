@@ -308,7 +308,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 				} else {
 					const balance = user.balance + amount
 					await updateUser(id, { balance, updated:now() })
-					await replyMessage(0, replyToken, MSG_DEPOSIT_SUCCESS.replace('{user}', `#${String(id)} (${names[id]})`).replace('{amount}', String(amount)))
+					await replyMessage(id, replyToken, MSG_DEPOSIT_SUCCESS.replace('{user}', `#${String(id)} (${names[id]})`).replace('{amount}', String(amount)))
 				}
 			}
 			break
