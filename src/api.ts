@@ -284,7 +284,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 		case AdminCommands.start:
 			{
 				if (currentRound.roundId!==0) {
-					await replyMessage(0, replyToken, ERROR_ALREADY_STARTED)
+					await replyMessage(0, replyToken, ERROR_ALREADY_STARTED.replace('{roundId}', String(currentRound.roundId)))
 					return false
 				}
 				await startRound()
