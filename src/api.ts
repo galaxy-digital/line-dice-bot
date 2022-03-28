@@ -335,7 +335,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 					const roundId = currentRound.roundId
 					if (roundId!==0 && currentRound.started) {
 						if ( !/^[1-6]{3,3}$/.test(param) ) {
-							await replyMessage(0, replyToken, ERROR_REQUIRE_BANK)
+							await replyMessage(0, replyToken, ERROR_UNKNOWN_COMMAND)
 							return false
 						}
 						await replyDieImage(replyToken, param)
