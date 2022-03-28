@@ -302,8 +302,8 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 					return false
 				}
 
-				await stopRound()
 				await replyMessage(0, replyToken, MSG_STOPPED.replace('{roundId}', String(currentRound.roundId)))
+				await stopRound()
 			}
 			break
 		case AdminCommands.deposit:
