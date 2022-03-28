@@ -686,7 +686,7 @@ const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, 
 
 const getPastResults = async ():Promise<Array<RoundResultType>> => {
 	const result = [] as Array<RoundResultType>
-	const rows = await Rounds.find({ result:{ $exists:true } }).sort({ created:-1 }).limit(10).toArray()
+	const rows = await Rounds.find({ result:{ $exists:true } }).sort({ roundId:-1 }).limit(10).toArray()
 	for (let k=rows.length - 1; k>=0; k--) {
 		const i = rows[k]
 		result.push({ roundId:i.roundId, result:i.result || '' })
