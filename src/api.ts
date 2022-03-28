@@ -241,7 +241,7 @@ const getPastResultImage = async (rows:Array<RoundResultType>) => {
 	let spacing = 25
 	
 	const w = 800
-	const h = top * 2 + (diceSize + spacing) * (rows.length - 1)
+	const h = top * 2 + (diceSize + spacing) * rows.length
 
 	const diceLeft = w - left - diceSize * 3 - spacing * 2
 	const canvas = createCanvas(w, h)
