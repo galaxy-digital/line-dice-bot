@@ -557,9 +557,7 @@ const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):
 const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, rewards:number, balance:number }>> => {
 	const result = [] as Array<{ uid:number, rewards:number, balance:number }>
 	const roundId = currentRound.roundId
-	currentRound.roundId = 0
-	currentRound.started = false
-	const rows = await Bettings.find({ roundId:currentRound.roundId }).toArray()
+	const rows = await Bettings.find({ roundId }).toArray()
 	const us = {} as {[uid:number]:{ bet:number,rewards:number }}
 	let totalBetting = 0
 	let totalRewards = 0
@@ -581,6 +579,8 @@ const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, 
 			totalRewards += rewards
 		}
 	}
+	currentRound.roundId = 0
+	currentRound.started = false
 	await Rounds.updateOne({ roundId }, { $set:{ result:num, totalBetting, totalRewards, updated:now() } })
 	return result
 }
