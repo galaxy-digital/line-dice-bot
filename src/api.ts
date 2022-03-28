@@ -390,7 +390,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 		switch (cmd) {
 		case GuestCommands.cancel:
 			{
-				const _round = checkRound(uid, replyToken)
+				const _round = await checkRound(uid, replyToken)
 				if (!_round) return false
 				const rows = await Bettings.find({ uid }).toArray()
 				if (rows && rows.length) {
@@ -412,7 +412,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 			}
 			break
 		case GuestCommands.help:
-			{	
+			{
 				await replyMessage(uid, replyToken, MSG_GAME_RULE)
 			}
 			break
