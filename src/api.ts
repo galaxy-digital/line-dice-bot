@@ -594,7 +594,7 @@ const addAndGetBetting = async (uid:number, params:Array<{bets:string[], amount:
 const getOrCreateUser = async (userId:string) => {
 	let row = await Users.findOne({userId})
 	if (row===null) {
-		let id = 100001
+		let id = 1001
 		const rows = await Users.aggregate([{$group: {_id: null, max: { $max : "$id" }}}]).toArray();
 		if (rows.length>0) id = rows[0].max + 1
 		const profile = await client.getProfile(userId)
