@@ -375,7 +375,7 @@ const checkRound = async (uid:number, replyToken:string) => {
 		return false
 	}
 	if (currentRound.stopped) {
-		await replyMessage(uid, replyToken, MSG_STOPPED)
+		await replyMessage(uid, replyToken, MSG_STOPPED.replace('{roundId}', String(currentRound.roundId)))
 		return false
 	}
 	return true
