@@ -28,10 +28,12 @@ declare interface SchemaBettings {
 	created:		number
 }
 
+/*
 declare interface SchemaGroups {
 	groupId:		string
 	updated:		number
 }
+*/
 
 declare interface ChatSourceType {
 	type:			"user"|"group"

@@ -3,8 +3,7 @@ import * as express from 'express'
 import * as fs from 'fs'
 import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
-import { Message } from '@line/bot-sdk';
-import { Bettings, Groups, Rounds, Users } from './Model';
+import { Bettings, Rounds, Users } from './Model';
 import { createCanvas, Image } from 'canvas'
 
 const middleware = line.middleware;
@@ -57,7 +56,7 @@ let currentRound = {
 const names = {} as {[id:number]:string}
 
 const MSG_REPLY_ADMIN = `管理员`
-const MSG_REPLY_GUEST = `客户ID: #{uid}`
+const MSG_REPLY_GUEST = `用户ID: #{uid}`
 const MSG_BET_TOTAL = `总和: {total}`
 const MSG_REGISTERED_BANK = 'Your bank account was successfully registered.'
 const MSG_BALANCE = 'your balance is {balance}.'
@@ -80,26 +79,22 @@ Offer a 2x odds
 3 out of 4 odds
 `
 
-const MSG_NOT_STARTED = 'Betting has not yet started.'
-const MSG_NOT_COMPLETED = '当前下注还没终了'
-const MSG_STARTED = '下注开始了'
-const MSG_STOPPED = '下注停止了'
+const MSG_NOT_STARTED = '投注还没开始。'
+const MSG_NOT_COMPLETED = '当前下注还没终了。'
+const MSG_STARTED = '下注开始了。'
+const MSG_STOPPED = '下注停止了。'
 
-
-const MSG_CANCEL_BET = '您的投注已取消' // Your bet has been cancelled
-const MSG_CANCEL_BET_NOT_STARTED = 'you did not jointed betting.'
-const MSG_DEPOSIT_SUCCESS = '{user} 存款 {amount}成功. '
-const MSG_BETTED = '下注成功 【{cmd} {amount}】'
-
+const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
+const MSG_DEPOSIT_SUCCESS = '{user} 存款 {amount}成功。'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '无知错误'
 const ERROR_REQUIRE_BANK = '命令错误: /Y {银行账户}'
 const ERROR_INVALID_PARAM = '无效参数'
-const ERROR_NOT_EXISTS_USER = '用户不存在'
-const ERROR_NOT_BETTED = "您还没下注"
-const ERROR_BET_BALANCE = "不够余额"
-const ERROR_ALREADY_STOPPED = "投注已经停止"
+const ERROR_NOT_EXISTS_USER = '用户不存在。'
+const ERROR_NOT_BETTED = "您还没下注。"
+const ERROR_BET_BALANCE = "不够余额。"
+const ERROR_ALREADY_STOPPED = "投注已经停止。"
 
 const images = {} as {[key:string]:Image}
 
@@ -118,7 +113,7 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 		text += '\r\n\r\n'
 	} 
 	text += message
-	const data = { type: 'text', text } as Message;
+	const data = { type: 'text', text } as line.Message;
 	  
 	client.replyMessage(replyToken, data).then((res) => {
 		console.log(res)
@@ -133,7 +128,7 @@ export const replyDieImage = async (replyToken:string, text:string) => {
 		type: 'image',
 		originalContentUrl: serverUrl + '/' + uri,
 		previewImageUrl: serverUrl + '/' + uri
-	} as Message
+	} as line.Message
 	  
 	client.replyMessage(replyToken, message).then((res) => {
 		console.log(res)
@@ -158,7 +153,6 @@ export const initApp = async () => {
 		if (i.slice(-4)!=='.png') continue
 		const image = await getImage( _fileDir + '/' + i)
 		if (image) images[i.slice(0, -4)] = image
-		// let uri = 'data:image/webp;base64,' + fs.readFileSync( _fileDir + '/captcha/' + i ).toString("base64");
 	}
 	const users = await Users.find().toArray()
 	for (let i of users) names[i.id] = i.displayName
@@ -182,10 +176,10 @@ const hook = (req:express.Request, res:express.Response)=>{
 
 router.post("/webhook", middleware(config), hook);
 
-router.post("/webhook-test", (req:express.Request, res:express.Response)=>{
+/* router.post("/webhook-test", (req:express.Request, res:express.Response)=>{
 	const body = req.body
 	res.status(200).send('');
-})
+}) */
 
 const getDiceImage = async (text: string) => {
 	if (text.length===3) {
@@ -233,7 +227,7 @@ const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessa
 			params = message.text.slice(p + 1).trim()
 		}
 		if (isAdmin(source.userId)) {
-			const result = await parseAdminCommand(replyToken, cmd, params)
+			const result = await parseAdminCommand(source.groupId || '', replyToken, cmd, params)
 			if (result===true) return true
 		}
 		return await parseCommand(source.groupId || '', source.userId, replyToken, cmd, params)
@@ -267,7 +261,7 @@ const validateCommand = (cmd:string):string[]|null => {
 	return result
 }
 
-const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Promise<boolean> => {
+const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, param:string):Promise<boolean> => {
 	try {
 		switch (cmd) {
 		case AdminCommands.start:
@@ -348,8 +342,7 @@ const parseAdminCommand = async (replyToken:string, cmd:string, param:string):Pr
 
 const parseCommand = async (groupId:string, userId:string, replyToken:string, cmd:string, param:string):Promise<boolean> => {
 	try {
-		if (groupId!=='') await insertGroupId(groupId)
-		
+		// if (groupId!=='') await insertGroupId(groupId)
 		const user = await getOrCreateUser(userId)
 		const uid = user.id
 		if (!currentRound.started) {
@@ -380,6 +373,11 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 		case GuestCommands.balance:
 			{	
 				await replyMessage(uid, replyToken, MSG_BALANCE.replace('{balance}', String(user.balance)))
+			}
+			break
+		case GuestCommands.help:
+			{	
+				await replyMessage(uid, replyToken, MSG_GAME_RULE)
 			}
 			break
 		case GuestCommands.bankAccount:
@@ -445,7 +443,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				await replyMessage(uid, replyToken, ls.join('\r\n'))
 				return true
 			}
-			await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+			// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 			break
 		}
 		return true
@@ -460,9 +458,9 @@ const getUserById = async (id:number) => {
 	return await Users.findOne({ id })
 }
 
-const insertGroupId = async (groupId:string) => {
+/* const insertGroupId = async (groupId:string) => {
 	await Groups.updateOne({ groupId }, { $set: { groupId, updated:now() } }, { upsert:true })
-}
+} */
 
 const startRound = async () => {
 	let roundId = 1001
@@ -535,7 +533,7 @@ const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):
 			}
 		}
 	}
-	return 0
+	return amount * rate
 }
 
 const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, rewards:number, balance:number }>> => {
@@ -569,7 +567,6 @@ const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, 
 	return result
 }
 
-
 const addAndGetBetting = async (uid:number, params:Array<{bets:string[], amount:number}>):Promise<Array<{cmd:string, amount:number}>> => {
 	const inserts = [] as Array<SchemaBettings>
 	const created = now()
@@ -593,7 +590,6 @@ const addAndGetBetting = async (uid:number, params:Array<{bets:string[], amount:
 	}
 	return result
 }
-
 
 const getOrCreateUser = async (userId:string) => {
 	let row = await Users.findOne({userId})

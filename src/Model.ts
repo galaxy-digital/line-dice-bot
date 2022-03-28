@@ -6,7 +6,7 @@ const client = new MongoClient('mongodb://localhost:27017');
 const db = client.db(dbname);
 
 export const Users = 	db.collection<SchemaUsers>('users');
-export const Groups = 	db.collection<SchemaGroups>('groups');
+// export const Groups = 	db.collection<SchemaGroups>('groups');
 export const Rounds = 	db.collection<SchemaRounds>('rounds');
 export const Bettings = db.collection<SchemaBettings>('bettings');
 
@@ -16,7 +16,7 @@ const connect = async () => {
 		setlog('connected to MongoDB')
 		Users.createIndex( {userId: 1}, { unique: true })
 		Users.createIndex( {id: 1}, { unique: true })
-		Groups.createIndex( {groupId: 1}, { unique: true })
+		// Groups.createIndex( {groupId: 1}, { unique: true })
 		Rounds.createIndex( {roundId: 1}, { unique: true })
 	} catch (error) {
 		console.error('Connection to MongoDB failed', error)
