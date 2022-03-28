@@ -5,12 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Program",
+            "program": "${workspaceFolder}/app.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
             "type": "node",
             "request": "launch",
-            "name": "Launch TS Node",
-            "program": "${workspaceFolder}/dist/app.js",
-            "preLaunchTask": "tsc: build - tsconfig.json",
-            "outFiles": ["${workspaceFolder}/dist/**/*.js", "!**/node_modules/**"]
-        }
+            "name": "test",
+            "program": "${workspaceFolder}/test/index.js"
+        },
+
     ]
 }

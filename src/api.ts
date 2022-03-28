@@ -261,7 +261,7 @@ const validateCommand = (cmd:string):string[]|null => {
 	while (k < len) {
 		let pk = k
 		for (let i of BetCommandList) {
-			if (cmd.slice(k).indexOf(i)!==-1) {
+			if (cmd.slice(k).indexOf(i)===0) {
 				k += i.length
 				result.push(i)
 				if (k===len-1) break
@@ -534,21 +534,28 @@ const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):
 	let sum = 0
 	let rate = 0
 	for (let i of rs) sum += Number(i)
+	let isLeopard = rs[0]===rs[1] && rs[1]===rs[2]
 	let isSingle = false
+	
+	
 	for (let i of bets) {
 		if (BetCommands.small===i) {
+			if (isLeopard) return 0
 			valid &&= sum>=4 && sum<=10
 			isSingle = true
 			if (valid) rate = rate===0 ? 2 : 3.3
 		} else if (BetCommands.big===i) {
+			if (isLeopard) return 0
 			valid &&= sum>=11 && sum<=17
 			isSingle = true
 			if (valid) rate = rate===0 ? 2 : 3.3
 		} else if (BetCommands.odd===i) {
+			if (isLeopard) return 0
 			valid &&= (sum % 2 ) == 1
 			isSingle = true
 			if (valid) rate = rate===0 ? 2 : 3.3
 		} else if (BetCommands.even===i) {
+			if (isLeopard) return 0
 			valid &&= (sum % 2 ) == 0
 			isSingle = true
 			if (valid) rate = rate===0 ? 2 : 3.3
