@@ -25,7 +25,7 @@ const isAdmin = (userId:string) => userId===adminChatId
 const AdminCommands = {
 	start: 			"/start",		// 开始下注
 	stop: 			"/B",			// 终了下注
-	deposit: 		"/deposit",		// 用户充值 
+	deposit: 		"/D",		// 用户充值 
 	result:			"/S",			// 
 }
 // 管理命令
@@ -401,7 +401,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 			{
 				const _round = checkRound(uid, replyToken)
 				if (!_round) return false
-				
+
 				// 处理多行命令
 				const lines = (cmd + ' ' + param).toLowerCase().split(/\r\n|\r|\n/g)
 				const bs = [] as Array<{ bets:string[], amount:number }>
