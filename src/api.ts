@@ -511,7 +511,7 @@ const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):
 	let sum = 0
 	let rate = 0
 	for (let i of rs) sum += Number(i)
-	let isSingle = true
+	let isSingle = false
 	for (let i of bets) {
 		if (BetCommands.small===i) {
 			valid &&= sum>=4 && sum<=10
