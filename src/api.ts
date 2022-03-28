@@ -428,8 +428,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 			break
 		default:
 			{
-				const _round = await checkRound(uid, replyToken)
-				if (!_round) return false
+				
 
 				// 处理多行命令
 				const lines = (cmd + ' ' + param).toLowerCase().split(/\r\n|\r|\n/g)
@@ -461,6 +460,9 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 						}
 					}
 				}
+				const _round = await checkRound(uid, replyToken)
+				if (!_round) return false
+				
 				if (bs.length===0) {
 					// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 					return false
