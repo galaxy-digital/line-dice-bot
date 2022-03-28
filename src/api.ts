@@ -636,8 +636,15 @@ const getOrCreateUser = async (userId:string) => {
 		let id = 1001
 		const rows = await Users.aggregate([{$group: {_id: null, max: { $max : "$id" }}}]).toArray();
 		if (rows.length>0) id = rows[0].max + 1
-		const profile = await client.getProfile(userId)
-		console.log('profile', profile)
+		let displayName = ''
+		try {
+			const profile = await client.getProfile(userId)
+			displayName = profile.displayName
+			console.log('profile', profile)
+		} catch (error) {
+			console.log(error)
+		}
+		
 		/* .then((profile) => {
 			console.log(profile.displayName);
 			console.log(profile.userId);
@@ -650,12 +657,12 @@ const getOrCreateUser = async (userId:string) => {
 		const user = {
 			id,
 			userId,
-			displayName:	profile.displayName,
+			displayName,
 			balance: 		0,
 			updated: 		0,
 			created: 		now()
 		} as SchemaUsers
-		names[id] = profile.displayName
+		names[id] = displayName
 		await Users.insertOne(user)
 		return user
 	}
