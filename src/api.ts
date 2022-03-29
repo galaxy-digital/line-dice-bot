@@ -300,10 +300,13 @@ const validateCommand = (cmd:string):string[]|null => {
 	const result = [] as string[]
 	const len = cmd.length
 	let k = 0
+	let isSpec = false
 	while (k < len) {
 		let pk = k
 		for (let i of BetCommandList) {
 			if (cmd.slice(k).indexOf(i)===0) {
+				if (isSpec) return null
+				isSpec = true
 				k += i.length
 				result.push(i)
 				if (k===len-1) break
