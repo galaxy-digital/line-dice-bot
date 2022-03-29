@@ -66,6 +66,7 @@ const MSG_REPLY_GUEST = `用户ID: 🙂{uid}`
 const MSG_BET_TOTAL = `总和: {total}`
 const MSG_BANK = '收款账户'
 const MSG_BALANCE = 'your balance is {balance}.'
+const MSG_SET_BANK = '收款账户设置成功'
 const MSG_GAME_RULE = `1 single type:
 Small: The total points are 4-10 (Leopard Banker takes all)
 Big: 11-17 total points (Leopard Banker takes all)
@@ -415,6 +416,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 					return false
 				}
 				await setConfig("bank", param)
+				await replyMessage(0, replyToken, MSG_SET_BANK)
 			}
 			break
 		default: 
