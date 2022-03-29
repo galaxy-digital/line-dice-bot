@@ -43,7 +43,9 @@ Model.connect().then(async ()=>{
 		
 		
 		app.use(Api);
-		
+		app.get('/', (req,res) => {
+			res.send(`this is Labi's website`)
+		})
 		app.use(express.urlencoded({limit: '200mb'}))
 		app.use(express.json({limit: '200mb'}))
 		app.use(express.static(__dirname + '/../images'))
