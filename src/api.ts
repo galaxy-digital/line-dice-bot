@@ -3,7 +3,7 @@ import * as express from 'express'
 import * as fs from 'fs'
 import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
-import { Bettings, Rounds, Users } from './Model';
+import { Bettings, Config, Rounds, Users } from './Model';
 import { createCanvas, Image } from 'canvas'
 
 const middleware = line.middleware;
@@ -30,15 +30,16 @@ interface RoundResultType {
 const AdminCommands = {
 	start: 			"/start",		// 开始下注
 	stop: 			"/B",			// 终了下注
-	deposit: 		"/D",		// 用户充值 
-	result:			"/S",			// 
+	deposit: 		"/D",			// 用户充值 
+	result:			"/S",			// 设置结果和查看
+	setBank:		"/set"			// 设置收款账户
 }
 // 管理命令
 const GuestCommands = {
 	cancel:			"/X",
 	balance:		"/C",
 	help:			"/A",
-	bankAccount:	"/Y",
+	showBank:		"/Y",			// 管理收款账户
 	pastRounds:		"/N",
 	methodSingle:	"/"
 }
@@ -63,7 +64,7 @@ const names = {} as {[id:number]:string}
 const MSG_REPLY_ADMIN = `管理员`
 const MSG_REPLY_GUEST = `用户ID: 🙂{uid}`
 const MSG_BET_TOTAL = `总和: {total}`
-const MSG_REGISTERED_BANK = 'Your bank account was successfully registered.'
+const MSG_BANK = '收款账户'
 const MSG_BALANCE = 'your balance is {balance}.'
 const MSG_GAME_RULE = `1 single type:
 Small: The total points are 4-10 (Leopard Banker takes all)
@@ -407,6 +408,15 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 				}
 			}
 			break
+		case AdminCommands.setBank:
+			{
+				if (param==='') {
+					await replyMessage(0, replyToken, ERROR_INVALID_PARAM)
+					return false
+				}
+				await setConfig("bank", param)
+			}
+			break
 		default: 
 			return false
 		}
@@ -465,14 +475,12 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				await replyMessage(uid, replyToken, MSG_GAME_RULE)
 			}
 			break
-		case GuestCommands.bankAccount:
+		case GuestCommands.showBank:
 			{
-				if (!param) {
-					await replyMessage(uid, replyToken, ERROR_REQUIRE_BANK)
-					return false
+				const bank = await getConfig("bank")
+				if (bank!=="") {
+					await replyMessage(uid, replyToken, MSG_BANK + '\r\n' + bank)
 				}
-				await updateUser(userId, { bankAccount:param })
-				await replyMessage(uid, replyToken, MSG_REGISTERED_BANK)
 			}
 			break
 		case GuestCommands.pastRounds:
@@ -685,6 +693,16 @@ const updateRoundAndGetResults = async (num:string):Promise<Array<{ uid:number, 
 	currentRound.started = false
 	await Rounds.updateOne({ roundId }, { $set:{ result:num, totalBetting, totalRewards, updated:now() } })
 	return result
+}
+
+const getConfig = async (key:string):Promise<string> => {
+	const row = await Config.findOne({ key })
+	if (row) return row.value
+	return ''
+}
+
+const setConfig = async (key:string, value:string) => {
+	await Config.updateOne({ key }, { key, value }, { upsert:true })
 }
 
 const getPastResults = async ():Promise<Array<RoundResultType>> => {
