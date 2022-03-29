@@ -224,7 +224,7 @@ const getDiceImage = async (text: string) => {
 			const y = top
 			context.drawImage(images[nums[k]], x, y)
 		}
-		const title = 'Hi, World!'
+		const title = MSG_RESULT.replace('{roundId}', String(currentRound.roundId))
 		context.font = 'bold 40pt'
 		context.textAlign = 'center'
 		context.fillStyle = '#fff'
