@@ -188,6 +188,8 @@ export const initApp = async () => {
 }
 
 const hook = (req:express.Request, res:express.Response)=>{
+	
+	console.log('body', req.body)
 	if (req.body.events && req.body.events.length!==0) {
 		const event = req.body.events[0]
 		const { message, source } = event
@@ -279,7 +281,7 @@ const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessa
 	try {
 		if (message.type !== "text") return false
 		
-		console.log('message', message)
+		
 
 		const replyToken = event.replyToken
 		const p = message.text.indexOf(' ')
