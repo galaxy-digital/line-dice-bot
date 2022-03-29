@@ -93,7 +93,7 @@ const MSG_STOPPED = '🚩{roundId}投注停止了。'
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
-const MSG_RESULT = '🚩{roundId}投注结果'
+const MSG_RESULT = '{roundId}投注结果'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '无知错误'
