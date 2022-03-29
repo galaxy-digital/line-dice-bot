@@ -535,7 +535,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				const _round = await checkRound(uid, replyToken)
 				if (!_round) return false
 
-				if (bs.length===0) {
+				if (bs.length===0 || bs.length>2) {
 					// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 					return false
 				}
