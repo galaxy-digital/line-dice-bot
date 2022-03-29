@@ -224,7 +224,7 @@ const getDiceImage = async (text: string) => {
 			context.drawImage(images[nums[k]], x, y)
 		}
 		const title = MSG_RESULT.replace('{roundId}', String(currentRound.roundId))
-		context.font = 'bold 40pt'
+		context.font = 'bold 40pt Menlo'
 		context.textAlign = 'center'
 		context.fillStyle = '#fff'
 		context.fillText(title, w / 2, 110)
@@ -257,7 +257,7 @@ const getPastResultImage = async (rows:Array<RoundResultType>) => {
 		const i = rows[m]
 
 		const title = `Round #${i.roundId}`
-		context.font = '40pt'
+		context.font = '40pt Menlo'
 		context.textAlign = 'left'
 		// context.fillStyle = '#fff'
 		
