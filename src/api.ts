@@ -128,8 +128,7 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 	client.replyMessage(replyToken, data).then((res) => {
 		console.log(res)
 	}).catch((err) => {
-		console.log('message', text)
-		console.log(err)
+		setlog(err)
 	});
 }
 
@@ -137,7 +136,7 @@ export const pushMessage = (chatId:string, text:string) => {
 	const data = { type: 'text', text } as line.Message;
 	  
 	client.pushMessage(chatId, data).then((res) => {
-		setlog("pushMessage", res)
+		console.log(res)
 	}).catch((err) => {
 		// console.log('message', text)
 		setlog("pushMessage", err)
