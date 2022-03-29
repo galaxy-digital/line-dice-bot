@@ -65,38 +65,42 @@ const MSG_REPLY_ADMIN = `管理员`
 const MSG_REPLY_GUEST = `用户ID: 🙂{uid}`
 const MSG_BET_TOTAL = `总和: {total}`
 const MSG_BANK = '收款账户'
-const MSG_BALANCE = 'your balance is {balance}.'
+const MSG_BALANCE = '你的账户余额还有{balance}.'
 const MSG_SET_BANK = '收款账户设置成功'
-const MSG_GAME_RULE = `1 single type:
-Small: The total points are 4-10 (Leopard Banker takes all)
-Big: 11-17 total points (Leopard Banker takes all)
-Single: The total number of points is 5.7.9.11.13.15.17 points
-Double: 4.6.8.10.12.14.16 points total
-Multiple: 2 times
-2. Duplex
-Big single, big double, small single, small double, digital size, digital single and double.
-Odds: 3.3x
+const MSG_GAME_RULE = `1、押注大小单双规则:
+小: 下注命令为： 小/金额 如 小/100 表示用户打算用100来押注大。中奖规则:三个骰子的总和为:4、5、6、7、8、9、10.奖金2倍，如果开出豹子号（3个骰子一样）. 
+大: 下注命令为： 大/金额 如 大/100 表示用户打算用100来押注小。中奖规则:三个骰子的总和为:11、12、13、14、15、16、17.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
+单: 下注命令为： 单/金额 如 单/100 表示用户打算用100来押注单。中奖规则:三个骰子的总和为单:5、7、9、11、13、15、17.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
+双: 下注命令为： 双/金额 如 双/100 表示用户打算用100来押注双。中奖规则:三个骰子的总和为双:4、6、8、10、12、14、16.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
 
-3 double digits
-1/2 3/1
-Odds: 6x
-4. Single Number
-Offer a 2x odds
-2 out of 3 odds
-3 out of 4 odds
+2、单压一个数：
+下注命令为：数字/金额，如 2/100. 数字必须在1-6之间，下注金额不要超过用户余额
+中奖规则：如三个骰子的结果中，有一个用户下注的数字，用户获得2倍奖励。出现两个用户押注的数字，用户获得3倍奖励。如果出现3个押注的数字，用户获得4倍奖励。
+如：开出来的数字 为234，那么用户获得 200， 如果为224 用户获得300，如果222，用户获得400
+
+3、压双数：
+下注命令为：数字数字/金额，如 23/100, 数字必须在1-6之间，下注金额不要超过用户余额
+中奖规则：如果三个骰子的结果中，有两个数字和用户下注的数字一样。那么用户获得6倍奖励。
+如：开出来的数字 为234，那么用户获得600奖励。
+
+4、大小单双+数字
+下注命令为：如 大3/100, 3大/100,小3/100,3小/100,单2/100,双6/100
+中奖规则：如果开出来的骰子总和为大，且三个骰子的数有一个等于用户下注数。
+奖励倍数：如果开出来的总和为 17，且其中 有3. 那么客户获得3.3倍的奖金
+
 `
 
 const MSG_NOT_STARTED = '投注还没开始。'
-const MSG_NOT_COMPLETED = '当前下注还没终了。'
-const MSG_STARTED = '🚩{roundId}投注开始了。'
-const MSG_STOPPED = '🚩{roundId}投注停止了。'
+const MSG_NOT_COMPLETED = '当前下注还没结束。'
+const MSG_STARTED = '🚩第{roundId}轮，投注开始。'
+const MSG_STOPPED = '🚩第{roundId}轮，投注停止了。'
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
 const MSG_RESULT = '{roundId}投注结果'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
-const ERROR_UNKNOWN_ERROR = '无知错误'
+const ERROR_UNKNOWN_ERROR = '未知错误'
 const ERROR_REQUIRE_BANK = '命令错误: /Y {银行账户}'
 const ERROR_INVALID_PARAM = '无效参数'
 const ERROR_NOT_EXISTS_USER = '用户不存在。'
@@ -104,8 +108,8 @@ const ERROR_NOT_BETTED = "您还没下注。"
 const ERROR_BET_BALANCE = "不够余额。"
 const ERROR_ALREADY_STARTED = "🚩{roundId}投注已经开始。"
 const ERROR_ALREADY_STOPPED = "🚩{roundId}投注已经停止。"
-const ERROR_GROUP_COMMAND = "It can only be used in groups."
-const ERROR_NO_RESULT = "no past result"
+const ERROR_GROUP_COMMAND = "只能在群组中使用该命令."
+const ERROR_NO_RESULT = "没有历史下注记录"
 const images = {} as {[key:string]:Image}
 
 export const replyMessage = (uid:number|null, replyToken:string, message:string) => {
@@ -302,6 +306,8 @@ const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessa
 	return false
 };
 
+
+//处理输入 分割 大小单双 和数字 【大，2】 【2，大】
 const validateCommand = (cmd:string):string[]|null => {
 	const result = [] as string[]
 	const len = cmd.length
@@ -310,6 +316,7 @@ const validateCommand = (cmd:string):string[]|null => {
 	while (k < len) {
 		let pk = k
 		for (let i of BetCommandList) {
+			//查找 大小单双 出现的位置 记录 为 k
 			if (cmd.slice(k).indexOf(i)===0) {
 				if (isSpec) return null
 				isSpec = true
@@ -510,11 +517,14 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				const lines = (cmd + ' ' + param).toLowerCase().split(/\r\n|\r|\n/g)
 				const bs = [] as Array<{ bets:string[], amount:number }>
 				let total = 0
+				//对于每一行命令
 				for (let line of lines) {
+					//使用分隔符分开 命令 和 金额 分隔符是 非 数字 和 大小单双的符号
 					const x = line.trim().split(BetCommandPattern)
 					if (x.length===2 || x.length===3) {
 						let bets = [] as string[]
 						for (let k=0; k<x.length - 1; k++) {
+							//对命令进行处理
 							const cs = validateCommand(x[k])
 							if (cs===null) {
 								// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
@@ -526,6 +536,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 							}
 						}
 						if (bets.length) {
+							//处理金额 写入数据库
 							const amount = Number(x[x.length-1])
 							if (isNaN(amount)) {
 								// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
@@ -537,6 +548,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 						}
 					}
 				}
+				//查看目前是第几轮
 				const _round = await checkRound(uid, replyToken)
 				if (!_round) return false
 
@@ -544,20 +556,25 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 					// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 					return false
 				}
+				//本次下注的金额 大于 余额报错
 				if (total>user.balance) {
 					await replyMessage(uid, replyToken, ERROR_BET_BALANCE)
 					return false
 				}
 				let ls = [] as string[]
 				const balance = user.balance - total
+				//更新用户余额
 				await updateUser(userId, { balance })
+				//统计用户所有下注记录
 				total = 0
 				const rows = await addAndGetBetting(user.id, bs)
 				for (let i of rows) {
 					total += i.amount
+					//打印输出用户的下注记录
 					ls.push(`${i.cmd} => ${i.amount} `)
 				}
 				ls.push(MSG_BET_TOTAL.replace('{total}', String(total)))
+				//机器人发送消息到Line 群
 				await replyMessage(uid, replyToken, ls.join('\r\n'))
 				return true
 			}
