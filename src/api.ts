@@ -137,10 +137,10 @@ export const pushMessage = (chatId:string, text:string) => {
 	const data = { type: 'text', text } as line.Message;
 	  
 	client.pushMessage(chatId, data).then((res) => {
-		console.log(res)
+		setlog("pushMessage", res)
 	}).catch((err) => {
-		console.log('message', text)
-		console.log(err)
+		// console.log('message', text)
+		setlog("pushMessage", err)
 	});
 }
 
@@ -152,9 +152,9 @@ export const replyImage = async (replyToken:string, uri:string) => {
 	} as line.Message
 	  
 	client.replyMessage(replyToken, message).then((res) => {
-		console.log(res)
+		// setlog("pushMessage", res)
 	}).catch((err) => {
-		console.log(err)
+		setlog("replyMessage", err)
 	});
 }
 
@@ -278,6 +278,9 @@ const getPastResultImage = async (rows:Array<RoundResultType>) => {
 const handleWebHook = async (event:any, source:ChatSourceType, message:ChatMessageType):Promise<boolean> => {
 	try {
 		if (message.type !== "text") return false
+		
+		console.log('message', message)
+
 		const replyToken = event.replyToken
 		const p = message.text.indexOf(' ')
 		let cmd = '', params = ''
