@@ -225,7 +225,7 @@ const getDiceImage = async (text: string) => {
 			context.drawImage(images[nums[k]], x, y)
 		}
 		const title = 'Hi, World!'
-		context.font = 'bold 40pt Menlo'
+		context.font = 'bold 40pt'
 		context.textAlign = 'center'
 		context.fillStyle = '#fff'
 		context.fillText(title, w / 2, 110)
