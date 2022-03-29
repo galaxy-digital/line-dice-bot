@@ -516,6 +516,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 								// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 								return false
 							}
+							if (cs.length>2) return false
 							for (let i of cs) {
 								bets.push(i)
 							}
@@ -535,7 +536,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 				const _round = await checkRound(uid, replyToken)
 				if (!_round) return false
 
-				if (bs.length===0 || bs.length>2) {
+				if (bs.length===0) {
 					// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
 					return false
 				}
