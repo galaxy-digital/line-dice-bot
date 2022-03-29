@@ -26,13 +26,19 @@ Model.connect().then(async ()=>{
 		const app = express()
 		const server = http.createServer(app)
 		let httpsServer = null as any;
-		const fileKey = __dirname+'/../certs/portal.api.key'
-		const filePem = __dirname+'/../certs/portal.api.pem'
-		if (fs.existsSync(fileKey) && fs.existsSync(filePem)) {
-			const key = fs.readFileSync(fileKey, 'utf8')
-			const cert = fs.readFileSync(filePem, 'utf8')
-			const options = {cert,key}
+		const file_key = __dirname+'/../certs/labibot.xyz.key';
+		const file_crt = __dirname+'/../certs/labibot.xyz.crt';
+		const file_ca = __dirname+'/../certs/labibot.xyz.ca-bundle';
+		if (fs.existsSync(file_key) && fs.existsSync(file_crt) && fs.existsSync(file_ca)) {
+			const key = fs.readFileSync(file_key, 'utf8')
+			const cert = fs.readFileSync(file_crt, 'utf8')
+			const caBundle = fs.readFileSync(file_ca, 'utf8')
+			const ca = caBundle.split('-----END CERTIFICATE-----\n') .map((cert) => cert +'-----END CERTIFICATE-----\n')
+			ca.pop()
+			const options = {cert,key,ca}
 			httpsServer = https.createServer(options,app)
+		} else {
+			console.log("Do not find ssl files, disabled ssl features.")
 		}
 
 		app.use(cors({
