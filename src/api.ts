@@ -257,7 +257,7 @@ const getPastResultImage = async (rows:Array<RoundResultType>) => {
 		const i = rows[m]
 
 		const title = `Round #${i.roundId}`
-		context.font = '40pt Menlo'
+		context.font = '40pt'
 		context.textAlign = 'left'
 		// context.fillStyle = '#fff'
 		
