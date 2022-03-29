@@ -704,7 +704,7 @@ const getConfig = async (key:string):Promise<string> => {
 }
 
 const setConfig = async (key:string, value:string) => {
-	await Config.updateOne({ key }, { key, value }, { upsert:true })
+	await Config.updateOne({ key }, { $set:{ key, value } }, { upsert:true })
 }
 
 const getPastResults = async ():Promise<Array<RoundResultType>> => {
