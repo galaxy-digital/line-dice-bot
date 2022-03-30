@@ -89,6 +89,7 @@ const MSG_GAME_RULE = `
 5、查看最近10次开奖历史： /N
 6、查看充值银行卡：/Y
 7、取消所有下注：/X
+8、查看余额: /C
 
 管理员命令：
 /start ：开始下注
@@ -101,8 +102,8 @@ const MSG_GAME_RULE = `
 
 const MSG_NOT_STARTED = '投注还没开始，请管理员输入/start开始。'
 const MSG_NOT_COMPLETED = '当前下注还没结束。'
-const MSG_STARTED = '🚩第{roundId}轮，投注开始。'
-const MSG_STOPPED = '🚩第{roundId}轮，投注停止了。'
+const MSG_STARTED = '🚩第{roundId}轮，下注开始。'
+const MSG_STOPPED = '🚩第{roundId}轮，停止下注了，请进抖音直播，查看现场开奖。'
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
