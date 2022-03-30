@@ -411,6 +411,7 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 					{
 						await replyMessage(id, replyToken,MSG_WITHDRAW_SUCCESS.replace('{amount}', String(amount)))
 					}
+					await replyMessage(id, replyToken, user.id +MSG_BALANCE.replace('{balance}', String(balance)))
 				}
 			}
 			break
