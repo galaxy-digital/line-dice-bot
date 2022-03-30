@@ -386,7 +386,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 			case AdminCommands.listUsers:
 				{
 					//查看参与游戏的用户详细情况
-					let ls = [] as string[]
+					let ls = [] 
 					const rows = await getUserList()
 					if (rows.length === 0) {
 						await replyMessage(0, replyToken, '当前还没有用户参与游戏')
@@ -394,11 +394,47 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					}
 					for (let i of rows) {
 						//打印输出用户的ID号，姓名，金额
-						ls.push(`用户${i.uid}(${i.name}):账户余额 ${i.balance}💰💰`)
+						let str = `${i.uid}(${i.name}):余额 ${i.balance}💰💰`
+						ls.push({"type":"text","adjustMode":"shrink-to-fit","text":str})
+						//ls.push(`用户${i.uid}(${i.name}):账户余额 ${i.balance}💰💰`)
 					}
 					//机器人发送消息到Line 群
-					await replyMessage(0, replyToken, ls.join('\r\n'))
-					return true
+					//await replyMessage(0, replyToken, ls.join('\r\n'))
+					var data1 =   {
+						"type": "flex",
+						"altText": "user balance",
+						"contents": {
+						  "type": "bubble",
+							"header": {
+							  "type": "box",
+							  "layout": "vertical",
+							  "contents": [
+								{
+								  "type": "text",
+								  "text": "用户余额",
+								  "weight": "bold",
+								  "style": "normal",
+								  "align": "center",
+								  "color": "#FFFFFF"
+								}
+							  ],
+							  "backgroundColor": "#e94700"
+							},
+						  "body": {
+							"type": "box",
+							"layout": "vertical",
+							"contents": ls
+						  }
+						}
+					  } as line.Message;
+					  
+					  client.pushMessage(groupId, data1)
+					  .then(() => {
+						console.log('success')
+					  })
+					  .catch((err) => {
+						// error handling
+					  });
 				}
 				break
 			case AdminCommands.deposit:
@@ -505,7 +541,7 @@ const checkRound = async (uid: number, replyToken: string) => {
 const parseCommand = async (groupId: string, userId: string, replyToken: string, cmd: string, param: string): Promise<boolean> => {
 	try {
 		// if (groupId!=='') await insertGroupId(groupId)
-		const user = await getOrCreateUser(userId)
+		const user = await getOrCreateUser(groupId,userId)
 		const uid = user.id
 
 		switch (cmd) {
@@ -572,22 +608,6 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 						const x = line.trim().split(BetCommandPattern)
 
 						if (x.length === 2 || x.length === 3) {
-							//不允许下两个同样的数字
-							if (x.length === 3) {
-								if (x[0] === x[1]) {
-									await replyMessage(uid, replyToken, '不允许下注两个同样的数字')
-									return false
-								}
-							}
-							if(x.length === 2)
-							{
-								var reg = /(?:^|)(\S{1}).*\1/g;
-      							if(reg.test(x[0]))
-								  {
-									await replyMessage(uid, replyToken, '不允许下注两个同样的数字')
-									return false
-								  }
-							}
 							let bets = [] as string[]
 							for (let k = 0; k < x.length - 1; k++) {
 								//对命令进行处理
@@ -637,7 +657,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 					for (let i of rows) {
 						total += i.amount
 						//打印输出用户的下注记录
-						ls.push(` ✅${i.cmd} => ${i.amount}  💰💰`)
+						ls.push(` ✅${i.cmd} => ${i.amount}💰`)
 					}
 					ls.push(MSG_BET_TOTAL.replace('{total}', String(total)))
 					ls.push(MSG_BALANCE.replace('{balance}', String(balance)))
@@ -832,7 +852,7 @@ const addAndGetBetting = async (uid: number, params: Array<{ bets: string[], amo
 	return result
 }
 
-const getOrCreateUser = async (userId: string) => {
+const getOrCreateUser = async (groupId: string,userId: string) => {
 	let row = await Users.findOne({ userId })
 	if (row === null) {
 		let id = 1001
@@ -840,7 +860,8 @@ const getOrCreateUser = async (userId: string) => {
 		if (rows.length > 0) id = rows[0].max + 1
 		let displayName = ''
 		try {
-			const profile = await client.getProfile(userId)
+			//const profile = await client.getProfile(userId)
+			const profile = await client.getGroupMemberProfile(groupId, userId)
 			displayName = profile.displayName
 			console.log('profile', profile)
 		} catch (error) {
