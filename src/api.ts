@@ -109,7 +109,7 @@ const MSG_STOPPED = '🚩第{roundId}轮，停止下注了，请进抖音直播�
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
 const MSG_WITHDRAW_SUCCESS = '提现 {amount}成功。'
-const MSG_RESULT = '{roundId}投注结果'
+const MSG_RESULT = '第{roundId}轮开奖结果'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
 const ERROR_UNKNOWN_ERROR = '未知错误'
@@ -395,16 +395,6 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					}
 					//机器人发送消息到Line 群
 					await replyMessage(0, replyToken, ls.join('\r\n'))
-					const fs = require('fs')
-					try {
-						const data = fs.readFileSync('flex_message.json', 'utf8')
-						console.log(data)
-						await pushMessage(groupId, data)
-					} catch (err) {
-						console.error(err)
-						await replyMessage(0, replyToken, '读取flex消息时候报错')
-					}
-					
 					return true
 				}
 				break
