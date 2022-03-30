@@ -124,6 +124,7 @@ const ERROR_GROUP_COMMAND = "只能在群组中使用该命令."
 const ERROR_NO_RESULT = "没有历史下注记录"
 const images = {} as { [key: string]: Image }
 
+//封装回复信息方法
 export const replyMessage = (uid: number | null, replyToken: string, message: string) => {
 	let text = ''
 	if (uid !== null) {
@@ -384,17 +385,26 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					//查看参与游戏的用户详细情况
 					let ls = [] as string[]
 					const rows = await getUserList()
-					if(rows.length===0)
-					{
+					if (rows.length === 0) {
 						await replyMessage(0, replyToken, '当前还没有用户参与游戏')
 						return false
 					}
 					for (let i of rows) {
 						//打印输出用户的ID号，姓名，金额
-						ls.push(`用户*${i.uid}(${i.name})* => ${i.balance}💰💰`)
+						ls.push(`用户${i.uid}(${i.name}):账户余额 ${i.balance}💰💰`)
 					}
 					//机器人发送消息到Line 群
 					await replyMessage(0, replyToken, ls.join('\r\n'))
+					const fs = require('fs')
+					try {
+						const data = fs.readFileSync('flex_message.json', 'utf8')
+						console.log(data)
+						await pushMessage(groupId, data)
+					} catch (err) {
+						console.error(err)
+						await replyMessage(0, replyToken, '读取flex消息时候报错')
+					}
+					
 					return true
 				}
 				break
@@ -861,12 +871,12 @@ const updateUser = async (userId: string | number, params: Partial<SchemaUsers>)
 }
 
 //获取用户列表
-const getUserList = async()=>{
-	const result = [] as Array<{ uid: number, name:string ,balance: number }>
+const getUserList = async () => {
+	const result = [] as Array<{ uid: number, name: string, balance: number }>
 	const rows = await Users.find().toArray()
 	if (rows) {
 		for (let i of rows) {
-			result.push({ uid: i.id, name:i.displayName,balance: i.balance })
+			result.push({ uid: i.id, name: i.displayName, balance: i.balance })
 		}
 	}
 	return result
