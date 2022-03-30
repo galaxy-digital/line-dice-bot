@@ -300,7 +300,10 @@ const handleWebHook = async (event: any, source: ChatSourceType, message: ChatMe
 		if (message.type !== "text") return false
 
 
+		if (event.type == "memberJoined") {
 
+
+		}
 		const replyToken = event.replyToken
 		const p = message.text.indexOf(' ')
 		let cmd = '', params = ''
@@ -322,7 +325,7 @@ const handleWebHook = async (event: any, source: ChatSourceType, message: ChatMe
 };
 
 
-//处理输入 分割 大小单双 和数字 【大，2】 【2，大】
+//处理输入 分割 大小单双 和数字 【大，2】 【2，大】[33]
 const validateCommand = (cmd: string): string[] | null => {
 	const result = [] as string[]
 	const len = cmd.length
@@ -567,7 +570,15 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 					for (let line of lines) {
 						//使用分隔符分开 命令 和 金额 分隔符是 非 数字 和 大小单双的符号
 						const x = line.trim().split(BetCommandPattern)
+
 						if (x.length === 2 || x.length === 3) {
+							//不允许下两个同样的数字
+							if (x.length === 3) {
+								if (x[0] === x[1]) {
+									await replyMessage(uid, replyToken, '不允许下注两个同样的数字')
+									return false
+								}
+							}
 							let bets = [] as string[]
 							for (let k = 0; k < x.length - 1; k++) {
 								//对命令进行处理
@@ -669,7 +680,7 @@ const stopRound = async () => {
 	currentRound.stopped = true
 }
 
-//奖金计算
+//奖金计算 result 开奖结果. amount 赌注金额, bets 下注方式
 const calculateRewardsOfBetting = (result: string, amount: number, bets: string[]): number => {
 	const rs = result.split('')
 	let sum = 0
@@ -717,7 +728,7 @@ const calculateRewardsOfBetting = (result: string, amount: number, bets: string[
 				if (i === r) matchedCount++
 			}
 			if (matchedCount === 0) return 0
-			if (isSingle) {
+			if (isSingle) { //查到 大小单双后面 有数字，则3.3倍
 				rate = 3.3
 			} else {
 				if (rate !== 0 && matchedCount > 0) {
