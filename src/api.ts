@@ -63,9 +63,9 @@ const names = {} as {[id:number]:string}
 
 const MSG_REPLY_ADMIN = `管理员`
 const MSG_REPLY_GUEST = `用户ID: 🙂{uid}`
-const MSG_BET_TOTAL = `总和: {total}`
+const MSG_BET_TOTAL = `本轮下注总金额: 💰{total}💰`
 const MSG_BANK = '收款账户'
-const MSG_BALANCE = '你的账户余额还有{balance}.'
+const MSG_BALANCE = '你的账户余额还有💰{balance}💰.'
 const MSG_SET_BANK = '收款账户设置成功'
 const MSG_GAME_RULE = `
 1、押注大小单双规则:
@@ -99,7 +99,7 @@ const MSG_GAME_RULE = `
 
 `
 
-const MSG_NOT_STARTED = '投注还没开始。'
+const MSG_NOT_STARTED = '投注还没开始，请管理员输入/start开始。'
 const MSG_NOT_COMPLETED = '当前下注还没结束。'
 const MSG_STARTED = '🚩第{roundId}轮，投注开始。'
 const MSG_STOPPED = '🚩第{roundId}轮，投注停止了。'
@@ -128,7 +128,7 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 			text = MSG_REPLY_ADMIN
 		} else {
 			if (names[uid]!==undefined) {
-				text = MSG_REPLY_GUEST.replace('{uid}', `${ String(uid) } (@${ names[uid] })`)
+				text = MSG_REPLY_GUEST.replace('{uid}', `${ String(uid) } (${ names[uid] })`)
 			} else {
 				text = MSG_REPLY_GUEST.replace('{uid}', String(uid))
 			}
