@@ -579,6 +579,15 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 									return false
 								}
 							}
+							if(x.length === 2)
+							{
+								var reg = /(?:^|)(\S{1}).*\1/g;
+      							if(reg.test(x[0]))
+								  {
+									await replyMessage(uid, replyToken, '不允许下注两个同样的数字')
+									return false
+								  }
+							}
 							let bets = [] as string[]
 							for (let k = 0; k < x.length - 1; k++) {
 								//对命令进行处理
