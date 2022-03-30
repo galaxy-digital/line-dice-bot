@@ -64,12 +64,12 @@ const names = {} as {[id:number]:string}
 const MSG_REPLY_ADMIN = `管理员`
 const MSG_REPLY_GUEST = `用户ID: 🙂{uid}`
 const MSG_BET_TOTAL = `本轮下注总金额: 💰{total}💰`
-const MSG_BANK = '收款账户'
+const MSG_BANK = '管理收款账户'
 const MSG_BALANCE = '你的账户余额还有💰{balance}💰.'
 const MSG_SET_BANK = '收款账户设置成功'
 const MSG_GAME_RULE = `
 1、押注大小单双规则:
-小: 下注命令为： 小/金额 如 小/100 表示用户打算用100来押注大。中奖规则:三个骰子的总和为:4、5、6、7、8、9、10.奖金2倍，如果开出豹子号（3个骰子一样）. 
+小: 下注命令为： 小/金额 如 小/100 表示用户打算用100来押注大。中奖规则:三个骰子的总和为:4、5、6、7、8、9、10.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
 大: 下注命令为： 大/金额 如 大/100 表示用户打算用100来押注小。中奖规则:三个骰子的总和为:11、12、13、14、15、16、17.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
 单: 下注命令为： 单/金额 如 单/100 表示用户打算用100来押注单。中奖规则:三个骰子的总和为单:5、7、9、11、13、15、17.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
 双: 下注命令为： 双/金额 如 双/100 表示用户打算用100来押注双。中奖规则:三个骰子的总和为双:4、6、8、10、12、14、16.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
@@ -107,6 +107,7 @@ const MSG_STOPPED = '🚩第{roundId}轮，停止下注了，请进抖音直播�
 
 const MSG_CANCEL_BET = '您的投注已取消。' // Your bet has been cancelled
 const MSG_DEPOSIT_SUCCESS = '存款 {amount}成功。'
+const MSG_WITHDRAW_SUCCESS = '提现 {amount}成功。'
 const MSG_RESULT = '{roundId}投注结果'
 
 const ERROR_UNKNOWN_COMMAND = '无效命令'
@@ -393,9 +394,23 @@ const parseAdminCommand = async (groupId:string, replyToken:string, cmd:string, 
 				if (user===null) {
 					await replyMessage(0, replyToken, ERROR_NOT_EXISTS_USER)
 				} else {
+					//正数为充值，负数为提现
 					const balance = user.balance + amount
+					if(balance<0)
+					{
+						//提现情况如果剩余金额小于零，提现金额大于用户余额
+						await replyMessage(id, replyToken, '该用户余额不足以提现')
+						return false
+					}
 					await updateUser(id, { balance, updated:now() })
-					await replyMessage(id, replyToken, MSG_DEPOSIT_SUCCESS.replace('{amount}', String(amount)))
+					if(amount>=0)
+					{
+						await replyMessage(id, replyToken, MSG_DEPOSIT_SUCCESS.replace('{amount}', String(amount)))
+					}
+					else
+					{
+						await replyMessage(id, replyToken,MSG_WITHDRAW_SUCCESS.replace('{amount}', String(amount)))
+					}
 				}
 			}
 			break
