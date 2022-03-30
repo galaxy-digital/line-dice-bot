@@ -29,12 +29,12 @@ interface RoundResultType {
 // 管理命令
 const AdminCommands = {
 	start: 			"/start",		// 开始下注
-	stop: 			"/B",			// 终了下注
-	deposit: 		"/D",			// 用户充值 
+	stop: 			"/B",			// 停止下注
+	deposit: 		"/D",			// 用户充值 /D ID 金额  提现 /D ID -金额 
 	result:			"/S",			// 设置结果和查看
 	setBank:		"/set"			// 设置收款账户
 }
-// 管理命令
+// 客户命令
 const GuestCommands = {
 	cancel:			"/X",
 	balance:		"/C",
@@ -67,7 +67,8 @@ const MSG_BET_TOTAL = `总和: {total}`
 const MSG_BANK = '收款账户'
 const MSG_BALANCE = '你的账户余额还有{balance}.'
 const MSG_SET_BANK = '收款账户设置成功'
-const MSG_GAME_RULE = `1、押注大小单双规则:
+const MSG_GAME_RULE = `
+1、押注大小单双规则:
 小: 下注命令为： 小/金额 如 小/100 表示用户打算用100来押注大。中奖规则:三个骰子的总和为:4、5、6、7、8、9、10.奖金2倍，如果开出豹子号（3个骰子一样）. 
 大: 下注命令为： 大/金额 如 大/100 表示用户打算用100来押注小。中奖规则:三个骰子的总和为:11、12、13、14、15、16、17.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
 单: 下注命令为： 单/金额 如 单/100 表示用户打算用100来押注单。中奖规则:三个骰子的总和为单:5、7、9、11、13、15、17.奖金2倍，如果开出豹子号（3个骰子一样），用户本局为输.
@@ -87,6 +88,16 @@ const MSG_GAME_RULE = `1、押注大小单双规则:
 下注命令为：如 大3/100, 3大/100,小3/100,3小/100,单2/100,双6/100
 中奖规则：如果开出来的骰子总和为大，且三个骰子的数有一个等于用户下注数。
 奖励倍数：如果开出来的总和为 17，且其中 有3. 那么客户获得3.3倍的奖金
+
+5、取消下注： /N
+6、查看充值银行卡：/Y
+
+管理员命令：
+/start ：开始下注
+/B ：停止下注
+/D 用户ID 金额：充值
+/S 数字： 开奖
+/set 银行卡号： 设置银行卡号
 
 `
 
@@ -147,6 +158,8 @@ export const pushMessage = (chatId:string, text:string) => {
 	});
 }
 
+
+//line 客户端返回图片
 export const replyImage = async (replyToken:string, uri:string) => {
 	const message = {
 		type: 'image',
@@ -574,6 +587,7 @@ const parseCommand = async (groupId:string, userId:string, replyToken:string, cm
 					ls.push(`${i.cmd} => ${i.amount} `)
 				}
 				ls.push(MSG_BET_TOTAL.replace('{total}', String(total)))
+				ls.push(MSG_BALANCE.replace('{balance}',String(balance)))
 				//机器人发送消息到Line 群
 				await replyMessage(uid, replyToken, ls.join('\r\n'))
 				return true
@@ -622,6 +636,7 @@ const stopRound = async () => {
 	currentRound.stopped = true
 }
 
+//奖金计算
 const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):number => {
 	const rs = result.split('')
 	let sum = 0
@@ -629,6 +644,7 @@ const calculateRewardsOfBetting = (result:string, amount:number, bets:string[]):
 	for (let i of rs) sum += Number(i)
 	let isLeopard = rs[0]===rs[1] && rs[1]===rs[2]
 	let isSingle = false
+	//赌注类型判断
 	for (let i of bets) {
 		if (BetCommands.small===i) {
 			if (isLeopard) return 0
