@@ -114,7 +114,7 @@ const ERROR_REQUIRE_BANK = '命令错误: /Y {银行账户}'
 const ERROR_INVALID_PARAM = '无效参数'
 const ERROR_NOT_EXISTS_USER = '用户不存在。'
 const ERROR_NOT_BETTED = "您还没下注。"
-const ERROR_BET_BALANCE = "不够余额。"
+const ERROR_BET_BALANCE = "❌余额不足，请联系管理充值❌"
 const ERROR_ALREADY_STARTED = "🚩{roundId}投注已经开始。"
 const ERROR_ALREADY_STOPPED = "🚩{roundId}投注已经停止。"
 const ERROR_GROUP_COMMAND = "只能在群组中使用该命令."
@@ -128,7 +128,7 @@ export const replyMessage = (uid:number|null, replyToken:string, message:string)
 			text = MSG_REPLY_ADMIN
 		} else {
 			if (names[uid]!==undefined) {
-				text = MSG_REPLY_GUEST.replace('{uid}', `${ String(uid) } (${ names[uid] })`)
+				text = MSG_REPLY_GUEST.replace('{uid}', `${ String(uid) } (@${ names[uid] })`)
 			} else {
 				text = MSG_REPLY_GUEST.replace('{uid}', String(uid))
 			}
