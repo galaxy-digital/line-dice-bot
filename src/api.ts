@@ -5,6 +5,8 @@ import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
 import { Bettings, Config, Rounds, Users } from './Model';
 import { createCanvas, Image } from 'canvas'
+import { MaxKey } from 'mongodb'
+import { ADDRCONFIG } from 'dns'
 
 const middleware = line.middleware;
 
@@ -33,6 +35,7 @@ const AdminCommands = {
 	deposit: "/D",			// 用户充值 /D ID 金额  提现 /D ID -金额 
 	result: "/S",			// 设置结果和查看
 	listUsers: "/L", 			// 查看所有用户
+	listBets:'/K',  //查看下注数
 	setBank: "/set"			// 设置收款账户
 }
 // 客户命令
@@ -367,6 +370,39 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					await replyMessage(0, replyToken, MSG_STARTED.replace('{roundId}', String(currentRound.roundId)))
 				}
 				break
+
+			case AdminCommands.listBets:
+				{
+					//输出用户投注情况
+					const result = await getUsersBetsList()
+					if (result.length) {
+						let ls = []
+						for (let i of result) {
+							const t1 = `#${i.uid}`
+							const name = names[i.uid]
+							const t2 = `${i.betsdetails}`
+							let str = t1+'('+names[i.uid]+'):'+t2
+							ls.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": str })
+						}
+						//await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
+						//格式化输出变成 FLEX文件
+						const fs = require('fs');
+						let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
+						let output_template = JSON.parse(rawdata);
+						output_template["contents"]["header"]["contents"][0]["text"] = '第'+String(currentRound.roundId)+'轮投注记录'
+						output_template["contents"]["body"]["contents"] = ls
+						var data = output_template as line.Message;
+						console.log(data)
+						await client.pushMessage(groupId, data)
+							.then(() => {
+								console.log('success')
+							})
+							.catch((err) => {
+								// error handling
+							});
+					}
+				}
+				break				
 			case AdminCommands.stop:
 				{
 					if (currentRound.roundId === 0 || !currentRound.started) {
@@ -380,13 +416,14 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 
 					await replyMessage(0, replyToken, MSG_STOPPED.replace('{roundId}', String(currentRound.roundId)))
 					await stopRound()
+
 				}
 				break
 
 			case AdminCommands.listUsers:
 				{
 					//查看参与游戏的用户详细情况
-					let ls = [] 
+					let ls = []
 					const rows = await getUserList()
 					if (rows.length === 0) {
 						await replyMessage(0, replyToken, '当前还没有用户参与游戏')
@@ -395,46 +432,25 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					for (let i of rows) {
 						//打印输出用户的ID号，姓名，金额
 						let str = `${i.uid}(${i.name}):余额 ${i.balance}💰💰`
-						ls.push({"type":"text","adjustMode":"shrink-to-fit","text":str})
+						ls.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": str })
 						//ls.push(`用户${i.uid}(${i.name}):账户余额 ${i.balance}💰💰`)
 					}
 					//机器人发送消息到Line 群
-					//await replyMessage(0, replyToken, ls.join('\r\n'))
-					var data1 =   {
-						"type": "flex",
-						"altText": "user balance",
-						"contents": {
-						  "type": "bubble",
-							"header": {
-							  "type": "box",
-							  "layout": "vertical",
-							  "contents": [
-								{
-								  "type": "text",
-								  "text": "用户余额",
-								  "weight": "bold",
-								  "style": "normal",
-								  "align": "center",
-								  "color": "#FFFFFF"
-								}
-							  ],
-							  "backgroundColor": "#e94700"
-							},
-						  "body": {
-							"type": "box",
-							"layout": "vertical",
-							"contents": ls
-						  }
-						}
-					  } as line.Message;
-					  
-					  client.pushMessage(groupId, data1)
-					  .then(() => {
-						console.log('success')
-					  })
-					  .catch((err) => {
-						// error handling
-					  });
+					//格式化输出变成 FLEX文件
+					const fs = require('fs');
+					let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
+					let output_template = JSON.parse(rawdata);
+					output_template["contents"]["header"]["contents"][0]["text"] = "用户余额"
+					output_template["contents"]["body"]["contents"] = ls
+					var data = output_template as line.Message;
+					console.log(data)
+					client.pushMessage(groupId, data)
+						.then(() => {
+							console.log('success')
+						})
+						.catch((err) => {
+							// error handling
+						});
 				}
 				break
 			case AdminCommands.deposit:
@@ -486,13 +502,29 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 								await replyImage(replyToken, uri)
 								const result = await updateRoundAndGetResults(param)
 								if (result.length) {
-									let ls = [] as string[]
+									let ls = []
 									for (let i of result) {
 										const t1 = `#${i.uid}`
 										const t2 = `${(i.rewards > 0 ? '+' : '') + i.rewards} = ${i.balance}`
-										ls.push([t1, ' '.repeat(30 - t1.length - t2.length), t2].join(''))
+										let str = t1+'('+names[i.uid]+')'+' '.repeat(30 - t1.length - t2.length)+t2
+										ls.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": str })
 									}
-									await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
+									//await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
+									//格式化输出变成 FLEX文件
+									const fs = require('fs');
+									let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
+									let output_template = JSON.parse(rawdata);
+									output_template["contents"]["header"]["contents"][0]["text"] = MSG_RESULT.replace('{roundId}', String(roundId))
+									output_template["contents"]["body"]["contents"] = ls
+									var data = output_template as line.Message;
+									console.log(data)
+									await client.pushMessage(groupId, data)
+										.then(() => {
+											console.log('success')
+										})
+										.catch((err) => {
+											// error handling
+										});
 								}
 							} else {
 								await replyMessage(0, replyToken, ERROR_UNKNOWN_ERROR)
@@ -541,7 +573,7 @@ const checkRound = async (uid: number, replyToken: string) => {
 const parseCommand = async (groupId: string, userId: string, replyToken: string, cmd: string, param: string): Promise<boolean> => {
 	try {
 		// if (groupId!=='') await insertGroupId(groupId)
-		const user = await getOrCreateUser(groupId,userId)
+		const user = await getOrCreateUser(groupId, userId)
 		const uid = user.id
 
 		switch (cmd) {
@@ -777,6 +809,35 @@ const calculateRewardsOfBetting = (result: string, amount: number, bets: string[
 	return amount * rate
 }
 
+//展示用户本轮下注详细
+
+const getUsersBetsList = async (): Promise<Array<{ uid: number, betsdetails:string}>> => {
+	const result = [] as Array<{ uid: number, betsdetails: string}>
+	const roundId = currentRound.roundId
+	const rows = await Bettings.find({ roundId }).toArray()
+	const map1 = new Map();
+	if (rows !== null) {
+		for (let i of rows) {
+			if(!map1.has(i.uid))
+			{
+				let betdetals = i.bets.join() +'='+i.amount+' '
+				map1.set(i.uid, betdetals);
+			}
+			else
+			{
+				let betdetals = map1.get(i.uid)
+				betdetals+=i.bets.join() +'='+i.amount+' '
+				map1.set(i.uid, betdetals);
+			}
+		}
+		for (const [key, value] of map1) {
+			result.push({ uid:key , betsdetails:value})
+		  }
+	}
+	return result
+}
+
+
 const updateRoundAndGetResults = async (num: string): Promise<Array<{ uid: number, rewards: number, balance: number }>> => {
 	const result = [] as Array<{ uid: number, rewards: number, balance: number }>
 	const roundId = currentRound.roundId
@@ -852,7 +913,7 @@ const addAndGetBetting = async (uid: number, params: Array<{ bets: string[], amo
 	return result
 }
 
-const getOrCreateUser = async (groupId: string,userId: string) => {
+const getOrCreateUser = async (groupId: string, userId: string) => {
 	let row = await Users.findOne({ userId })
 	if (row === null) {
 		let id = 1001
