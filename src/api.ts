@@ -35,7 +35,8 @@ const AdminCommands = {
 	deposit: "/D",			// 用户充值 /D ID 金额  提现 /D ID -金额 
 	result: "/S",			// 设置结果和查看
 	listUsers: "/L", 			// 查看所有用户
-	listBets:'/K',  //查看下注数
+	pastRounds: "/N", //显示过去10期开奖记录
+	listBets: '/K',  //查看下注数
 	setBank: "/set"			// 设置收款账户
 }
 // 客户命令
@@ -44,7 +45,6 @@ const GuestCommands = {
 	balance: "/C",
 	help: "/A",
 	showBank: "/Y",			// 管理收款账户
-	pastRounds: "/N",
 	methodSingle: "/"
 }
 
@@ -381,7 +381,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 							const t1 = `#${i.uid}`
 							const name = names[i.uid]
 							const t2 = `${i.betsdetails}`
-							let str = t1+'('+names[i.uid]+'):'+t2
+							let str = t1 + '(' + names[i.uid] + '):' + t2
 							ls.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": str })
 						}
 						//await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
@@ -389,7 +389,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 						const fs = require('fs');
 						let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
 						let output_template = JSON.parse(rawdata);
-						output_template["contents"]["header"]["contents"][0]["text"] = '第'+String(currentRound.roundId)+'轮投注记录'
+						output_template["contents"]["header"]["contents"][0]["text"] = '第' + String(currentRound.roundId) + '轮投注记录'
 						output_template["contents"]["body"]["contents"] = ls
 						var data = output_template as line.Message;
 						console.log(data)
@@ -402,7 +402,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 							});
 					}
 				}
-				break				
+				break
 			case AdminCommands.stop:
 				{
 					if (currentRound.roundId === 0 || !currentRound.started) {
@@ -444,13 +444,28 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					output_template["contents"]["body"]["contents"] = ls
 					var data = output_template as line.Message;
 					console.log(data)
-					client.pushMessage(groupId, data)
+					await client.pushMessage(groupId, data)
 						.then(() => {
 							console.log('success')
 						})
 						.catch((err) => {
-							// error handling
+							console.log(err)
 						});
+				}
+				break
+			case AdminCommands.pastRounds:
+				{
+					const rows = await getPastResults()
+					if (rows.length) {
+						const uri = await getPastResultImage(rows)
+						if (uri) {
+							await replyImage(replyToken, uri)
+						} else {
+							await replyMessage(0, replyToken, ERROR_UNKNOWN_ERROR)
+						}
+					} else {
+						await replyMessage(0, replyToken, ERROR_NO_RESULT)
+					}
 				}
 				break
 			case AdminCommands.deposit:
@@ -506,7 +521,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 									for (let i of result) {
 										const t1 = `#${i.uid}`
 										const t2 = `${(i.rewards > 0 ? '+' : '') + i.rewards} = ${i.balance}`
-										let str = t1+'('+names[i.uid]+')'+' '.repeat(30 - t1.length - t2.length)+t2
+										let str = t1 + '(' + names[i.uid] + ')' + ' '.repeat(30 - t1.length - t2.length) + t2
 										ls.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": str })
 									}
 									//await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
@@ -613,21 +628,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 					}
 				}
 				break
-			case GuestCommands.pastRounds:
-				{
-					const rows = await getPastResults()
-					if (rows.length) {
-						const uri = await getPastResultImage(rows)
-						if (uri) {
-							await replyImage(replyToken, uri)
-						} else {
-							await replyMessage(0, replyToken, ERROR_UNKNOWN_ERROR)
-						}
-					} else {
-						await replyMessage(0, replyToken, ERROR_NO_RESULT)
-					}
-				}
-				break
+
 			default:
 				{
 					// 处理多行命令
@@ -811,28 +812,26 @@ const calculateRewardsOfBetting = (result: string, amount: number, bets: string[
 
 //展示用户本轮下注详细
 
-const getUsersBetsList = async (): Promise<Array<{ uid: number, betsdetails:string}>> => {
-	const result = [] as Array<{ uid: number, betsdetails: string}>
+const getUsersBetsList = async (): Promise<Array<{ uid: number, betsdetails: string }>> => {
+	const result = [] as Array<{ uid: number, betsdetails: string }>
 	const roundId = currentRound.roundId
 	const rows = await Bettings.find({ roundId }).toArray()
 	const map1 = new Map();
 	if (rows !== null) {
 		for (let i of rows) {
-			if(!map1.has(i.uid))
-			{
-				let betdetals = i.bets.join() +'='+i.amount+' '
+			if (!map1.has(i.uid)) {
+				let betdetals = i.bets.join() + '=' + i.amount + ' '
 				map1.set(i.uid, betdetals);
 			}
-			else
-			{
+			else {
 				let betdetals = map1.get(i.uid)
-				betdetals+=i.bets.join() +'='+i.amount+' '
+				betdetals += i.bets.join() + '=' + i.amount + ' '
 				map1.set(i.uid, betdetals);
 			}
 		}
 		for (const [key, value] of map1) {
-			result.push({ uid:key , betsdetails:value})
-		  }
+			result.push({ uid: key, betsdetails: value })
+		}
 	}
 	return result
 }
