@@ -342,7 +342,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 						const fs = require('fs');
 						let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
 						let output_template = JSON.parse(rawdata);
-						output_template["contents"]["header"]["contents"][0]["text"] = '第' + String(currentRound.roundId) + '轮投注记录'
+						output_template["contents"]["header"]["contents"][0]["text"] = String(currentRound.roundId) + 'ประวัติการเดิมพันรอบ'
 						output_template["contents"]["body"]["contents"] = ls
 						var data = output_template as line.Message;
 						console.log(data)
@@ -379,7 +379,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					let ls = []
 					const rows = await getUserList()
 					if (rows.length === 0) {
-						await replyMessage(0, replyToken, '当前还没有用户参与游戏')
+						await replyMessage(0, replyToken, 'ขณะนี้ไม่มีผู้ใช้ที่เข้าร่วมในเกม')
 						return false
 					}
 					for (let i of rows) {
@@ -393,7 +393,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 					const fs = require('fs');
 					let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
 					let output_template = JSON.parse(rawdata);
-					output_template["contents"]["header"]["contents"][0]["text"] = "用户余额"
+					output_template["contents"]["header"]["contents"][0]["text"] = "ยอดผู้ใช้"
 					output_template["contents"]["body"]["contents"] = ls
 					var data = output_template as line.Message;
 					console.log(data)
