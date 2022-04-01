@@ -6,7 +6,7 @@ import * as line from '@line/bot-sdk'
 import { Bettings, Config, Rounds, Users } from './Model';
 import { createCanvas, Image } from 'canvas'
 
-import enUS from './locales/en-Us'
+import enUS from './locales/en-US'
 import zhCN from './locales/zh-CN'
 import thTH from './locales/th-TH'
 
