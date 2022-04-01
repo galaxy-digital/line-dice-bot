@@ -76,7 +76,7 @@ let currentRound = {
 const names = {} as { [id: number]: string }
 const images = {} as { [key: string]: Image }
 const T = (key:string) => {
-	if (locales[lang][key]!==undefined) throw new Error('undefined lang key')
+	if (locales[lang][key]!==undefined) throw new Error('undefined lang key [' + key + ']')
 	return locales[lang][key]
 }
 
