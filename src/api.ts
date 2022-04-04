@@ -40,7 +40,7 @@ interface RoundResultType {
 
 // 管理命令
 const AdminCommands = {
-	start: "/start",		// 开始下注
+	start: "/Q",		// 开始下注
 	stop: "/B",			// 停止下注
 	deposit: "/D",			// 用户充值 /D ID 金额  提现 /D ID -金额 
 	result: "/S",			// 设置结果和查看
@@ -60,12 +60,13 @@ const GuestCommands = {
 
 // 投注命令 （改时候，别用短号或空白字）
 const BetCommands = {
-	big: "大",
-	small: "小",
-	odd: "单",
-	even: "双",
+	big: "ส",
+	small: "ต",
+	odd: "ดี",
+	even: "คู่",
 }
 const BetCommandList = Object.values(BetCommands).map(i => i.toLowerCase())
+//非数字，非大小单双的其他字符 作为 分隔符
 const BetCommandPattern = new RegExp('[^0-9' + BetCommandList.join('') + ']', 'g')
 
 let currentRound = {
@@ -287,6 +288,12 @@ const validateCommand = (cmd: string): string[] | null => {
 	const len = cmd.length
 	let k = 0
 	let isSpec = false
+	//如果同时下注两个相同的数，告诉客户非法输入
+	if(cmd.length===2 && cmd[0]===cmd[1])
+	{
+		//如果两个都位数字
+		return null
+	}
 	while (k < len) {
 		let pk = k
 		for (let i of BetCommandList) {
@@ -599,7 +606,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 								//对命令进行处理
 								const cs = validateCommand(x[k])
 								if (cs === null) {
-									// await replyMessage(uid, replyToken, ERROR_UNKNOWN_COMMAND)
+									await replyMessage(uid, replyToken, T('ERROR_UNKNOWN_COMMAND'))
 									return false
 								}
 								if (cs.length > 2) return false
