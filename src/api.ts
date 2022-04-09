@@ -205,8 +205,10 @@ const getDiceImage = async (text: string) => {
 		context.fillStyle = '#fff'
 		context.fillText(title, w / 2, 110)
 
-		const buffer = canvas.toBuffer('image/png')
-		const filename = +new Date() + '.png'
+		const buffer = canvas.toBuffer('image/jpeg')
+		const filename = +new Date() + '.jpg'
+		/* const buffer = canvas.toBuffer('image/png')
+		const filename = +new Date() + '.png' */
 		fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
 		return filename
 	}
