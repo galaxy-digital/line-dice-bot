@@ -5,6 +5,8 @@ import { setlog } from './helper'
 import * as line from '@line/bot-sdk'
 import { Bettings, Config, Rounds, Users } from './Model';
 import { createCanvas, Image } from 'canvas'
+const axios = require('axios');
+const FormData = require('form-data');
 
 import enUS from './locales/en-US'
 import zhCN from './locales/zh-CN'
@@ -32,6 +34,12 @@ const serverUrl = process.env.SERVER_URL || ''
 const config = { channelAccessToken, channelSecret, };
 const client = new line.Client({ channelAccessToken });
 const isAdmin = (userId: string) => userId === adminChatId
+
+const pinataApiKey = process.env.PINATA_APIKEY;
+const pinataSecretApiKey = process.env.PINATA_SECRET;
+
+const urlFile = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
+const urlJSON = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
 
 interface RoundResultType {
 	roundId: number
@@ -122,8 +130,8 @@ export const pushMessage = (chatId: string, text: string) => {
 export const replyImage = async (replyToken: string, uri: string) => {
 	const message = {
 		type: 'image',
-		originalContentUrl: serverUrl + '/' + uri,
-		previewImageUrl: serverUrl + '/' + uri
+		originalContentUrl: uri,
+		previewImageUrl: uri
 	} as line.Message
 
 	client.replyMessage(replyToken, message).then((res) => {
@@ -180,6 +188,40 @@ router.post("/webhook", middleware(config), hook);
 	res.status(200).send('');
 }) */
 
+const pinFileToIPFS = async (fileName:string) => {
+    let data = new FormData();
+    data.append('file', fs.createReadStream(fileName));
+    /* const metadata = JSON.stringify({ name });
+    data.append('pinataMetadata', metadata); */
+    /* const pinataOptions = JSON.stringify({
+        cidVersion: 0,
+        customPinPolicy: {
+            regions: [
+                {
+                    id: 'FRA1',
+                    desiredReplicationCount: 1
+                },
+                {
+                    id: 'NYC1',
+                    desiredReplicationCount: 2
+                }
+            ]
+        }
+    });
+    data.append('pinataOptions', pinataOptions); */
+    var res = await axios
+        .post(urlFile, data, {
+            maxBodyLength: 'Infinity',
+            headers: {
+                'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
+                pinata_api_key: pinataApiKey,
+                pinata_secret_api_key: pinataSecretApiKey
+            }
+        });
+        
+    return Promise.resolve(res)
+}
+
 const getDiceImage = async (text: string) => {
 	if (text.length === 3) {
 		const w = 800
@@ -210,7 +252,7 @@ const getDiceImage = async (text: string) => {
 		/* const buffer = canvas.toBuffer('image/png')
 		const filename = +new Date() + '.png' */
 		fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
-		return filename
+		return serverUrl + filename
 	}
 	return null
 }
@@ -251,7 +293,9 @@ const getPastResultImage = async (rows: Array<RoundResultType>) => {
 	const buffer = canvas.toBuffer('image/png')
 	const filename = +new Date() + '.png'
 	fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
-	return filename
+	// return serverUrl + filename
+	const res = await pinFileToIPFS(__dirname + '/../images/' + filename)
+	return 'https://ipfs.io/ipfs/' + res.data.IpfsHash
 }
 
 const handleWebHook = async (event: any, source: ChatSourceType, message: ChatMessageType): Promise<boolean> => {
