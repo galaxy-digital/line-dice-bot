@@ -254,8 +254,12 @@ const getDiceImage = async (text: string) => {
 		fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
 		// return serverUrl + filename
 		const res = await pinFileToIPFS(__dirname + '/../images/' + filename)
-		console.log('https://ipfs.io/ipfs/' + res.data.IpfsHash)
-		return 'https://ipfs.io/ipfs/' + res.data.IpfsHash
+		/* console.log('https://ipfs.io/ipfs/' + res.data.IpfsHash)
+		return 'https://ipfs.io/ipfs/' + res.data.IpfsHash */
+		const ipfsUri = 'https://gateway.pinata.cloud/ipfs/' + res.data.IpfsHash
+		console.log('getDiceImage', ipfsUri)
+		// return 'https://ipfs.io/ipfs/' + res.data.IpfsHash
+		return ipfsUri
 	}
 	return null
 }
@@ -298,8 +302,10 @@ const getPastResultImage = async (rows: Array<RoundResultType>) => {
 	fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
 	// return serverUrl + filename
 	const res = await pinFileToIPFS(__dirname + '/../images/' + filename)
-	console.log('https://ipfs.io/ipfs/' + res.data.IpfsHash)
-	return 'https://ipfs.io/ipfs/' + res.data.IpfsHash
+	const ipfsUri = 'https://gateway.pinata.cloud/ipfs/' + res.data.IpfsHash
+	console.log('getPastResultImage', ipfsUri)
+	// return 'https://ipfs.io/ipfs/' + res.data.IpfsHash
+	return ipfsUri
 }
 
 const handleWebHook = async (event: any, source: ChatSourceType, message: ChatMessageType): Promise<boolean> => {
