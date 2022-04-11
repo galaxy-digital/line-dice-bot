@@ -295,6 +295,7 @@ const getPastResultImage = async (rows: Array<RoundResultType>) => {
 	fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
 	// return serverUrl + filename
 	const res = await pinFileToIPFS(__dirname + '/../images/' + filename)
+	console.log('https://ipfs.io/ipfs/' + res.data.IpfsHash)
 	return 'https://ipfs.io/ipfs/' + res.data.IpfsHash
 }
 
