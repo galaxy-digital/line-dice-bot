@@ -252,7 +252,10 @@ const getDiceImage = async (text: string) => {
 		/* const buffer = canvas.toBuffer('image/png')
 		const filename = +new Date() + '.png' */
 		fs.writeFileSync(__dirname + '/../images/' + filename, buffer)
-		return serverUrl + filename
+		// return serverUrl + filename
+		const res = await pinFileToIPFS(__dirname + '/../images/' + filename)
+		console.log('https://ipfs.io/ipfs/' + res.data.IpfsHash)
+		return 'https://ipfs.io/ipfs/' + res.data.IpfsHash
 	}
 	return null
 }
