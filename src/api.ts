@@ -114,6 +114,30 @@ export const replyMessage = (uid: number | null, replyToken: string, message: st
 	});
 }
 
+export const replyFlexMessage = (uid: number | null, replyToken: string, data: line.Message) => {
+	/* let text = ''
+	if (uid !== null) {
+		if (uid === 0) {
+			text = T('MSG_REPLY_ADMIN')
+		} else {
+			if (names[uid] !== undefined) {
+				text = T('MSG_REPLY_GUEST').replace('{uid}', `${String(uid)} (${names[uid]})`)
+			} else {
+				text = T('MSG_REPLY_GUEST').replace('{uid}', String(uid))
+			}
+		}
+		text += '\r\n\r\n'
+	}
+	text += message
+	const data = { type: 'text', text } as line.Message; */
+
+	client.replyMessage(replyToken, data).then((res) => {
+		console.log(res)
+	}).catch((err) => {
+		setlog(err)
+	});
+}
+
 export const pushMessage = (chatId: string, text: string) => {
 	const data = { type: 'text', text } as line.Message;
 
@@ -372,6 +396,15 @@ const validateCommand = (cmd: string): string[] | null => {
 	}
 	return result.length === 0 ? null : result
 }
+const dices = [
+	'https://upload.wikimedia.org/wikipedia/commons/c/c5/Dice-1.png',
+	'https://upload.wikimedia.org/wikipedia/commons/1/18/Dice-2.png',
+	'https://upload.wikimedia.org/wikipedia/commons/7/70/Dice-3.png',
+	'https://commons.m.wikimedia.org/wiki/File:Dice-4.svg',
+	'https://commons.m.wikimedia.org/wiki/File:Dice-5.svg',
+	'https://commons.m.wikimedia.org/wiki/File:Dice-6.svg',
+]
+
 
 const parseAdminCommand = async (groupId: string, replyToken: string, cmd: string, param: string): Promise<boolean> => {
 	try {
@@ -528,38 +561,80 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 								await replyMessage(0, replyToken, T('ERROR_UNKNOWN_COMMAND'))
 								return false
 							}
-							const uri = await getDiceImage(param)
-							if (uri) {
-								await replyImage(replyToken, uri)
-								const result = await updateRoundAndGetResults(param)
-								if (result.length) {
-									let ls = []
-									for (let i of result) {
-										const t1 = `#${i.uid}`
-										const t2 = `${(i.rewards > 0 ? '+' : '') + i.rewards} = ${i.balance}`
-										let str = t1 + '(' + names[i.uid] + ')' + ' '.repeat(30 - t1.length - t2.length) + t2
-										ls.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": str })
-									}
-									//await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
-									//格式化输出变成 FLEX文件
-									const fs = require('fs');
-									let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
-									let output_template = JSON.parse(rawdata);
-									output_template["contents"]["header"]["contents"][0]["text"] = T('MSG_RESULT').replace('{roundId}', String(roundId))
-									output_template["contents"]["body"]["contents"] = ls
-									var data = output_template as line.Message;
-									console.log(data)
-									await client.pushMessage(groupId, data)
-										.then(() => {
-											console.log('success')
-										})
-										.catch((err) => {
-											// error handling
-										});
-								}
-							} else {
-								await replyMessage(0, replyToken, T('ERROR_UNKNOWN_ERROR'))
+							const items = [] as any[]
+							const nums = param.split('')
+							for (let k = 0; k < nums.length; k++) {
+								items.push({
+									type: "image",
+									url: dices[k],
+									size: "full",
+									aspectRatio: "1:1"
+								})
 							}
+
+							const json = {
+								type: "flex",
+								altText: "user balance",
+								contents: {
+									type: "bubble",
+									header: {
+										type: "box",
+										layout: "vertical",
+										contents: [
+											{
+												type: "text",
+												text: "",
+												weight: "bold",
+												style: "normal",
+												align: "center",
+												color: "#FFFFFF"
+											}
+										],
+										backgroundColor: "#e94700"
+									},
+									body: {
+										type: "box",
+										layout: "vertical",
+										contents: [
+											items
+										]
+									}
+								}
+							} as any
+
+							// const data = {  } as line.Message;
+							// const uri = await getDiceImage(param)
+							// if (uri) {
+							// await replyImage(replyToken, uri)
+							await replyFlexMessage(0, replyToken, json)
+							const result = await updateRoundAndGetResults(param)
+							if (result.length) {
+								let ls = []
+								for (let i of result) {
+									const t1 = `#${i.uid}`
+									const t2 = `${(i.rewards > 0 ? '+' : '') + i.rewards} = ${i.balance}`
+									let str = t1 + '(' + names[i.uid] + ')' + ' '.repeat(30 - t1.length - t2.length) + t2
+									ls.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": str })
+								}
+								//await pushMessage(groupId, MSG_RESULT.replace('{roundId}', String(roundId)) + '\r\n\r\n' + ls.join('\r\n'))
+								//格式化输出变成 FLEX文件
+								const fs = require('fs');
+								let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
+								let output_template = JSON.parse(rawdata);
+								output_template["contents"]["header"]["contents"][0]["text"] = T('MSG_RESULT').replace('{roundId}', String(roundId))
+								output_template["contents"]["body"]["contents"] = ls
+								// var data = output_template as line.Message;
+								await client.pushMessage(groupId, output_template)
+									.then(() => {
+										console.log('success')
+									})
+									.catch((err) => {
+										// error handling
+									});
+							}
+							/* } else {
+								await replyMessage(0, replyToken, T('ERROR_UNKNOWN_ERROR'))
+							} */
 						} else {
 							await replyMessage(0, replyToken, T('MSG_NOT_STARTED'))
 						}
@@ -644,7 +719,56 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 					}
 				}
 				break
+			case "/test-image":
+				{
+					const items = [] as any[]
+					const nums = param.split('')
+					for (let k = 0; k < nums.length; k++) {
+						items.push({
+							type: "image",
+							url: dices[ Number(nums[k]) ],
+							size: "10%",
+							aspectRatio: "1:1"
+						})
+					}
 
+					const json = {
+						type: "flex",
+						altText: "Line Dice Image Test",
+						contents: {
+							type: "bubble",
+							header: {
+								type: "box",
+								layout: "vertical",
+								contents: [
+									{
+										type: "text",
+										text: "",
+										weight: "bold",
+										style: "normal",
+										align: "center",
+										color: "#FFFFFF"
+									}
+								],
+								backgroundColor: "#e94700"
+							},
+							body: {
+								type: "box",
+								layout: "vertical",
+								contents: [
+									items
+								]
+							}
+						}
+					} as any
+
+					// const data = {  } as line.Message;
+					// const uri = await getDiceImage(param)
+					// if (uri) {
+					// await replyImage(replyToken, uri)
+					await replyFlexMessage(0, replyToken, json)
+				}
+				break
 			default:
 				{
 					// 处理多行命令
