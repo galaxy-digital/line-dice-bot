@@ -759,6 +759,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 							}
 						}
 					} as any
+					console.log(json)
 					client.pushMessage(replyToken, json).then((res) => {
 						console.log(res)
 					}).catch((err) => {
