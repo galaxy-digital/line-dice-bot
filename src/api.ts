@@ -727,8 +727,8 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 						contents.push({
 							type: "image",
 							url: dices[ Number(nums[k]) - 1 ],
-							size: "10%",
-							aspectRatio: "1:1"
+							/* size: "10%",
+							aspectRatio: "1:1" */
 						})
 					}
 
