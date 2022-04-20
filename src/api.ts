@@ -721,10 +721,10 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 				break
 			case "/test-image":
 				{
-					const items = [] as any[]
+					const contents = [] as any[]
 					const nums = param.split('')
 					for (let k = 0; k < nums.length; k++) {
-						items.push({
+						contents.push({
 							type: "image",
 							url: dices[ Number(nums[k]) - 1 ],
 							size: "10%",
@@ -755,9 +755,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 							body: {
 								type: "box",
 								layout: "vertical",
-								contents: [
-									items
-								]
+								contents
 							}
 						}
 					} as any
