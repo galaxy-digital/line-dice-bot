@@ -726,7 +726,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 					for (let k = 0; k < nums.length; k++) {
 						items.push({
 							type: "image",
-							url: dices[ Number(nums[k]) ],
+							url: dices[ Number(nums[k]) - 1 ],
 							size: "10%",
 							aspectRatio: "1:1"
 						})
@@ -761,12 +761,17 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 							}
 						}
 					} as any
-
+					client.pushMessage(replyToken, json).then((res) => {
+						console.log(res)
+					}).catch((err) => {
+						// console.log('message', text)
+						setlog("pushMessage", err)
+					});
 					// const data = {  } as line.Message;
 					// const uri = await getDiceImage(param)
 					// if (uri) {
 					// await replyImage(replyToken, uri)
-					await replyFlexMessage(0, replyToken, json)
+					// await replyFlexMessage(0, replyToken, json)
 				}
 				break
 			default:
