@@ -753,7 +753,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 							},
 							body: {
 								type: "box",
-								layout: "vertical",
+								layout: "baseline",
 								contents
 							}
 						}
