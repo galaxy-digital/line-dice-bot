@@ -750,7 +750,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 								contents: [
 									{
 										type: "text",
-										text: "",
+										text: "Game result",
 										weight: "bold",
 										style: "normal",
 										align: "center",
