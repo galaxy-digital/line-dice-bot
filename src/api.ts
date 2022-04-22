@@ -724,12 +724,19 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 					const contents = [] as any[]
 					const nums = param.split('')
 					for (let k = 0; k < nums.length; k++) {
-						contents.push({
+						/* contents.push({
+							"type": "text",
+							"text": "Brown Cafe",
+							"weight": "bold",
+							"size": "xl"
+						  }) */
+						  contents.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": "a" });
+						/* contents.push({
 							type: "image",
 							url: dices[ Number(nums[k]) - 1 ],
-							/* size: "10%",
-							aspectRatio: "1:1" */
-						})
+							// size: "10%",
+							// aspectRatio: "1:1"
+						}) */
 					}
 
 					const json = {
@@ -760,7 +767,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 						}
 					} as any
 					console.log(contents)
-					client.pushMessage(replyToken, json).then((res) => {
+					client.pushMessage(groupId, json).then((res) => {
 						console.log(res)
 					}).catch((err) => {
 						// console.log('message', text)
