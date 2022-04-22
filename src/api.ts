@@ -400,9 +400,9 @@ const dices = [
 	'https://upload.wikimedia.org/wikipedia/commons/c/c5/Dice-1.png',
 	'https://upload.wikimedia.org/wikipedia/commons/1/18/Dice-2.png',
 	'https://upload.wikimedia.org/wikipedia/commons/7/70/Dice-3.png',
-	'https://commons.m.wikimedia.org/wiki/File:Dice-4.svg',
-	'https://commons.m.wikimedia.org/wiki/File:Dice-5.svg',
-	'https://commons.m.wikimedia.org/wiki/File:Dice-6.svg',
+	'https://upload.wikimedia.org/wikipedia/commons/a/a9/Dice-4.png',
+	'https://upload.wikimedia.org/wikipedia/commons/6/6c/Dice-5.png',
+	'https://upload.wikimedia.org/wikipedia/commons/7/7a/Dice-6E.png',
 ]
 
 
