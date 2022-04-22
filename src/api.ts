@@ -562,10 +562,10 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 								await replyMessage(0, replyToken, T('ERROR_UNKNOWN_COMMAND'))
 								return false
 							}
-							const items = [] as any[]
+							const contents = [] as any[]
 							const nums = param.split('')
 							for (let k = 0; k < nums.length; k++) {
-								items.push({
+								contents.push({
 									type: "image",
 									url: dices[k],
 									size: "full",
@@ -595,10 +595,8 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 									},
 									body: {
 										type: "box",
-										layout: "vertical",
-										contents: [
-											items
-										]
+										layout: "baseline",
+										contents
 									}
 								}
 							} as any
