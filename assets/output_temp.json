@@ -19,9 +19,9 @@
       "backgroundColor": "#e94700"
     },
     "body": {
-    "type": "box",
-    "layout": "vertical",
-    "contents": []
+      "type": "box",
+      "layout": "vertical",
+      "contents": []
     }
   }
-  } 
+} 
