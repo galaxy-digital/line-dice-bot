@@ -114,7 +114,8 @@ export const replyMessage = (uid: number | null, replyToken: string, message: st
 	});
 }
 
-export const replyFlexMessage = (uid: number | null, replyToken: string, data: line.Message) => {
+export const replyFlexMessage = (replyToken: string, data: line.Message) => {
+	
 	/* let text = ''
 	if (uid !== null) {
 		if (uid === 0) {
@@ -583,7 +584,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 										contents: [
 											{
 												type: "text",
-												text: "",
+												text: T('MSG_RESULT').replace('{roundId}', String(currentRound.roundId)),
 												weight: "bold",
 												style: "normal",
 												align: "center",
@@ -606,7 +607,7 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 							// const uri = await getDiceImage(param)
 							// if (uri) {
 							// await replyImage(replyToken, uri)
-							await replyFlexMessage(0, replyToken, json)
+							await replyFlexMessage(replyToken, json)
 							const result = await updateRoundAndGetResults(param)
 							if (result.length) {
 								let ls = []
@@ -724,19 +725,12 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 					const contents = [] as any[]
 					const nums = param.split('')
 					for (let k = 0; k < nums.length; k++) {
-						/* contents.push({
-							"type": "text",
-							"text": "Brown Cafe",
-							"weight": "bold",
-							"size": "xl"
-						  }) */
-						  contents.push({ "type": "text", "adjustMode": "shrink-to-fit", "text": "a" });
-						/* contents.push({
+						contents.push({
 							type: "image",
 							url: dices[ Number(nums[k]) - 1 ],
-							// size: "10%",
+							size: "10%",
 							// aspectRatio: "1:1"
-						}) */
+						})
 					}
 
 					const json = {
@@ -766,18 +760,7 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 							}
 						}
 					} as any
-					console.log(contents)
-					client.pushMessage(groupId, json).then((res) => {
-						console.log(res)
-					}).catch((err) => {
-						// console.log('message', text)
-						setlog("pushMessage", err)
-					});
-					// const data = {  } as line.Message;
-					// const uri = await getDiceImage(param)
-					// if (uri) {
-					// await replyImage(replyToken, uri)
-					// await replyFlexMessage(0, replyToken, json)
+					await replyFlexMessage(replyToken, json)
 				}
 				break
 			default:
