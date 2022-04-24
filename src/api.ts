@@ -333,6 +333,8 @@ const getPastResultImage = async (rows: Array<RoundResultType>) => {
 	return ipfsUri
 }
 
+
+
 const handleWebHook = async (event: any, source: ChatSourceType, message: ChatMessageType): Promise<boolean> => {
 	try {
 		if (message.type !== "text") return false
@@ -506,13 +508,52 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 			case AdminCommands.pastRounds:
 				{
 					const rows = await getPastResults()
+					const fs = require('fs');
+					let rawdata = fs.readFileSync(__dirname + '/../assets/result.json');
+					let output_template = JSON.parse(rawdata);
+					output_template["contents"]["header"]["contents"][0]["text"] = "ยอดผู้ใช้"
+
+					const contents = [] as any[]
 					if (rows.length) {
-						const uri = await getPastResultImage(rows)
-						if (uri) {
-							await replyImage(replyToken, uri)
-						} else {
-							await replyMessage(0, replyToken, T('ERROR_UNKNOWN_ERROR'))
+						//给 contents 里面加 Box
+						for(let i of rows)
+						{
+	
+							let innerContents = [] as any[]
+							//输入文字第几轮
+							innerContents.push({
+								type: "text",
+								text: `#${i.roundId}`,
+								color: "#e94700",
+								weight: "bold"
+							})
+							//打印开奖结果
+							const nums = i.result.split('')
+							for (let k = 0; k <nums.length; k++) {
+								innerContents.push({
+									type: "image",
+									url: dices[Number(nums[k]) - 1],
+									size: "50%",
+									aspectRatio: "1:1"
+								})
+							}
+							contents.push({
+								type: "box",
+								layout: "horizontal",
+								contents:innerContents,
+								spacing: "sm"
+							})
 						}
+						output_template["contents"]["body"]["contents"] = contents
+						var data = output_template as line.Message;
+						console.log(data)
+						await client.pushMessage(groupId, data)
+							.then(() => {
+								console.log('success')
+							})
+							.catch((err) => {
+								console.log(err)
+							});
 					} else {
 						await replyMessage(0, replyToken, T('ERROR_NO_RESULT'))
 					}
@@ -567,45 +608,26 @@ const parseAdminCommand = async (groupId: string, replyToken: string, cmd: strin
 							for (let k = 0; k < nums.length; k++) {
 								contents.push({
 									type: "image",
-									url: dices[k],
-									size: "full",
+									url: dices[Number(nums[k]) - 1],
+									size: "50%",
 									aspectRatio: "1:1"
 								})
 							}
-
-							const json = {
-								type: "flex",
-								altText: "user balance",
-								contents: {
-									type: "bubble",
-									header: {
-										type: "box",
-										layout: "vertical",
-										contents: [
-											{
-												type: "text",
-												text: T('MSG_RESULT').replace('{roundId}', String(currentRound.roundId)),
-												weight: "bold",
-												style: "normal",
-												align: "center",
-												color: "#FFFFFF"
-											}
-										],
-										backgroundColor: "#e94700"
-									},
-									body: {
-										type: "box",
-										layout: "baseline",
-										contents
-									}
-								}
-							} as any
-
-							// const data = {  } as line.Message;
-							// const uri = await getDiceImage(param)
-							// if (uri) {
-							// await replyImage(replyToken, uri)
-							await replyFlexMessage(replyToken, json)
+							console.log(contents)
+							const fs = require('fs');
+							let rawdata = fs.readFileSync(__dirname + '/../assets/output_temp.json');
+							let output_template = JSON.parse(rawdata);
+							output_template["contents"]["header"]["contents"][0]["text"] = T('MSG_RESULT').replace('{roundId}', String(roundId))
+							output_template["contents"]["body"]["layout"] = "horizontal"
+							output_template["contents"]["body"]["contents"] = contents
+							// var data = output_template as line.Message;
+							await client.pushMessage(groupId, output_template)
+								.then(() => {
+									console.log('success')
+								})
+								.catch((err) => {
+									console.log(err)
+								});
 							const result = await updateRoundAndGetResults(param)
 							if (result.length) {
 								let ls = []
@@ -720,45 +742,30 @@ const parseCommand = async (groupId: string, userId: string, replyToken: string,
 				break
 			case "/test-image":
 				{
-					const contents = [] as any[]
+					let contents = []
 					const nums = param.split('')
 					for (let k = 0; k < nums.length; k++) {
 						contents.push({
 							type: "image",
 							url: dices[ Number(nums[k]) - 1 ],
-							size: "10%",
+							size: "10%"
 							// aspectRatio: "1:1"
 						})
 					}
-
-					const json = {
-						type: "flex",
-						altText: "Line Dice Image Test",
-						contents: {
-							type: "bubble",
-							header: {
-								type: "box",
-								layout: "vertical",
-								contents: [
-									{
-										type: "text",
-										text: "Game result",
-										weight: "bold",
-										style: "normal",
-										align: "center",
-										color: "#FFFFFF"
-									}
-								],
-								backgroundColor: "#e94700"
-							},
-							body: {
-								type: "box",
-								layout: "baseline",
-								contents
-							}
-						}
-					} as any
-					await replyFlexMessage(replyToken, json)
+					console.log(contents)
+					const fs = require('fs');
+					let rawdata = fs.readFileSync(__dirname + '/../assets/result.json');
+					let output_template = JSON.parse(rawdata);
+					output_template["contents"]["header"]["contents"][0]["text"] = '操'
+					output_template["contents"]["body"]["contents"] = contents
+					// var data = output_template as line.Message;
+					await client.pushMessage(groupId, output_template)
+						.then(() => {
+							console.log('success')
+						})
+						.catch((err) => {
+							console.log(err)
+						});
 				}
 				break
 			default:
